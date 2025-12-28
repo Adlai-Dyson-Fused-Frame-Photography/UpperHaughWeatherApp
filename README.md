@@ -44,7 +44,7 @@ Daily Forecast
 Visit Now!
 --------------------
 
-*   **Online Version**: [Website](https://adffp.uk/uhw)
+*   **Online Version**: [Website](https://adffp.uk/uhw) - hosted via Cloudflare Pages
 *   **Android App (.APK)**: Visit the releases section in this repo!
 *   **Windows, MacOS, and iOS**: Coming Soon!
 *   **PWA Version**: You can add this website as a web app to make it like its own app on your device, just select Add to Home Screen/Install in your browser

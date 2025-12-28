@@ -7,13 +7,13 @@
   "theme_color": "#1e374d",
   "icons": [
     {
-      "src": "https://raw.githubusercontent.com/adlaidyson-ffp/FFPMisc2/refs/heads/main/UHWeatherApp-SquareLogo.png",
+      "src": "https://cdn-eu.fusedframe.co.uk/services/upperhaugh-weather-app/logos/squarelogo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://raw.githubusercontent.com/adlaidyson-ffp/FFPMisc2/refs/heads/main/UHWeatherApp-SquareLogo.png",
+      "src": "https://cdn-eu.fusedframe.co.uk/services/upperhaugh-weather-app/logos/squarelogo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

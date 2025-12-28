@@ -1,4 +1,4 @@
-const CACHE_NAME = "uh-weather-cache-v7";
+const CACHE_NAME = "uh-weather-cache-v7.1";
 const FILES_TO_CACHE = [
   "./",
   "./index.html"
