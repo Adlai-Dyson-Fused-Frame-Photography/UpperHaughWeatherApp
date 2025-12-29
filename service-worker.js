@@ -1,4 +1,4 @@
-const CACHE_NAME = "uh-weather-cache-v7.3";
+const CACHE_NAME = "uh-weather-cache-v7.4";
 const FILES_TO_CACHE = [
   "./",
   "./index.html" // add any other local CSS/JS files you want cached

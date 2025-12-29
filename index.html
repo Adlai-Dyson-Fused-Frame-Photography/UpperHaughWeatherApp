@@ -427,7 +427,7 @@
       <p class="font-bold">Upper Haugh Weather</p>
       <p class="text-xs mt-1">
         Data from Open Weather Map (
-        <a href="https://uhwappapi.adlaidyson.co.uk/weather" class="underline hover:opacity-100 transition" target="_blank">uhwappapi.adlaidyson.co.uk</a>)
+        <a href="https://api.upperhaughweather.uk/weather" class="underline hover:opacity-100 transition" target="_blank">api.upperhaughweather.uk/weather</a>)
       </p>
       <p class="mt-2">
         <a href="https://adlaidyson.co.uk" class="underline hover:opacity-100 transition" target="_blank">Made by Adlai Dyson | Fused Frame Photography</a>
@@ -496,7 +496,7 @@
     async function fetchWeather() {
       try {
         document.getElementById('loading').classList.remove('hidden');
-        const res = await fetch('https://uhwappapi.adlaidyson.co.uk/weather');
+        const res = await fetch('https://api.upperhaughweather.uk/weather');
         if (!res.ok) throw new Error("Failed to fetch weather data");
         const {
           weather,
