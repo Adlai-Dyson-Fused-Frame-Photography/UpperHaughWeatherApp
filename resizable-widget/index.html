@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full w-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upper Haugh Weather</title>
+  
+  <!-- Custom Favicon for SEO / Title bar -->
+  <link rel="icon" type="image/png" href="https://cdn-eu.fusedframe.co.uk/services/upperhaugh-weather-app/logos/squarefavicon-transparent.png">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              bg: '#1e374d',
+              accent: '#94fdf8',
+              text: '#e5e7eb',
+              muted: '#9ca3af',
+              dark: '#112230',
+              glass: 'rgba(30, 55, 77, 0.75)'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Google Fonts for premium design readability -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #1e374d;
+    }
+
+    /* Custom scrollbar for small kiosk/containers if details overflow */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(30, 55, 77, 0.5);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #94fdf8;
+      border-radius: 2px;
+    }
+
+    /* GENERAL ROTATION & FLOATING ANIMATIONS */
+    @keyframes slow-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    @keyframes pulse-gentle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .animate-slow-spin {
+      animation: slow-spin 20s linear infinite;
+    }
+    .animate-float {
+      animation: float 4s ease-in-out infinite;
+    }
+    .animate-pulse-gentle {
+      animation: pulse-gentle 2s ease-in-out infinite;
+    }
+
+    /* -----------------------------------------
+       BOUNCE-FREE CONTAINER SENSITIVE LAYOUTS
+       (Using native CSS Container Queries)
+       ----------------------------------------- */
+    
+    /* Define Container Type on the outer wrapper */
+    #widget-container {
+      container-type: size;
+      container-name: widget;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+    }
+
+    /* 1. MINI LAYOUT Profile (< 280px wide OR < 280px tall) */
+    @container widget (max-width: 279px) or widget (max-height: 279px) {
+      #metrics-grid {
+        display: none !important;
+      }
+      #outlook-section {
+        display: none !important;
+      }
+      #location-name {
+        font-size: 1rem !important;
+      }
+      #current-temp {
+        font-size: 2.75rem !important;
+        line-height: 1 !important;
+      }
+      #weather-icon {
+        width: 54px !important;
+        height: 54px !important;
+      }
+      #condition-main {
+        font-size: 0.875rem !important;
+      }
+      #condition-desc {
+        display: none !important;
+      }
+    }
+
+    /* 2. WIDE & SHORT LAYOUT Profile (Height is small, but width is wide) */
+    @container widget (max-height: 279px) and (min-width: 400px) {
+      #weather-widget {
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 1.5rem !important;
+        padding: 1.25rem !important;
+      }
+      #metrics-grid {
+        display: none !important;
+      }
+      #outlook-section {
+        display: flex !important;
+        border-top: none !important;
+        border-left: 1px solid rgba(148, 253, 248, 0.15) !important;
+        padding-top: 0 !important;
+        padding-left: 1.5rem !important;
+        margin-top: 0 !important;
+        height: 100% !important;
+        width: 50% !important;
+        justify-content: center !important;
+      }
+      #main-content {
+        width: 50% !important;
+        flex-grow: 1 !important;
+        margin: 0 !important;
+      }
+      #location-name {
+        font-size: 1.125rem !important;
+      }
+      #current-temp {
+        font-size: 3.5rem !important;
+      }
+      #weather-icon {
+        width: 72px !important;
+        height: 72px !important;
+      }
+    }
+
+    /* 3. TALL & NARROW Profile (Optimized for Portrait Kiosks) */
+    @container widget (max-width: 449px) and (min-height: 280px) {
+      #weather-widget {
+        padding: 1.25rem !important;
+      }
+      #metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0.5rem !important;
+        margin-top: 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+      }
+      #outlook-section {
+        display: flex !important;
+        margin-top: 0.75rem !important;
+        padding-top: 0.75rem !important;
+      }
+    }
+
+  </style>
+</head>
+<body class="h-full w-full overflow-hidden select-none text-brand-text bg-brand-bg flex items-center justify-center">
+
+  <!-- THE CONTAINER WRAPPER -->
+  <div id="widget-container" class="w-full h-full">
+
+    <!-- THE DYNAMIC WEATHER WIDGET -->
+    <div id="weather-widget" class="w-full h-full bg-brand-bg p-6 flex flex-col justify-between overflow-hidden relative transition-all duration-200">
+      
+      <!-- Ambient backdrops for high-end styling -->
+      <div class="absolute -top-24 -right-24 w-48 h-48 bg-brand-accent/15 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-brand-accent/5 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Location / Top Row -->
+      <div class="flex items-start justify-between relative z-10 shrink-0">
+        <div>
+          <h2 id="location-name" class="text-xl md:text-2xl font-black text-brand-accent tracking-tight flex items-center gap-1.5 transition-all duration-300">
+            <svg class="w-5 h-5 text-brand-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span class="truncate">Upper Haugh</span>
+          </h2>
+        </div>
+      </div>
+
+      <!-- Middle Core Weather Row -->
+      <div id="main-content" class="flex items-center justify-between my-3 w-full relative z-10 flex-grow min-h-0">
+        <!-- Temp & Primary Description -->
+        <div class="flex flex-col">
+          <div class="flex items-baseline">
+            <span id="current-temp" class="text-5xl md:text-6xl lg:text-7xl font-black text-brand-text tracking-tighter">--</span>
+            <span class="text-2xl md:text-3xl lg:text-4xl font-extrabold text-brand-accent">°C</span>
+          </div>
+          <div class="flex flex-col mt-0.5">
+            <span id="condition-main" class="text-base md:text-xl font-bold text-brand-accent capitalize leading-tight">--</span>
+            <span id="condition-desc" class="text-xs md:text-sm text-brand-muted capitalize tracking-wide font-medium leading-none mt-0.5">--</span>
+          </div>
+        </div>
+
+        <!-- Responsive Weather Icon -->
+        <div id="weather-icon" class="weather-icon-wrapper w-20 h-20 md:w-28 md:h-28 flex items-center justify-center text-brand-accent shrink-0 animate-float">
+          <!-- Default Cloud Svg before feed registers -->
+          <svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Supporting Statistics Cards -->
+      <div id="metrics-grid" class="grid grid-cols-2 md:grid-cols-4 gap-2.5 w-full my-2 relative z-10 shrink-0">
+        <!-- Feels Like -->
+        <div class="bg-brand-dark/30 border border-brand-accent/5 rounded-xl p-2.5 flex items-center space-x-2">
+          <div class="text-brand-accent p-1 bg-brand-accent/10 rounded-lg shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2"/></svg>
+          </div>
+          <div class="min-w-0">
+            <span class="text-[9px] text-brand-muted block uppercase font-bold tracking-wider leading-none">Feels Like</span>
+            <span id="feels-like" class="text-xs md:text-sm font-bold text-brand-text truncate">--</span>
+          </div>
+        </div>
+        <!-- Wind -->
+        <div class="bg-brand-dark/30 border border-brand-accent/5 rounded-xl p-2.5 flex items-center space-x-2">
+          <div class="text-brand-accent p-1 bg-brand-accent/10 rounded-lg shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M14 12a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          </div>
+          <div class="min-w-0">
+            <span class="text-[9px] text-brand-muted block uppercase font-bold tracking-wider leading-none">Wind</span>
+            <span id="wind-speed" class="text-xs md:text-sm font-bold text-brand-text truncate">--</span>
+          </div>
+        </div>
+        <!-- Humidity -->
+        <div class="bg-brand-dark/30 border border-brand-accent/5 rounded-xl p-2.5 flex items-center space-x-2">
+          <div class="text-brand-accent p-1 bg-brand-accent/10 rounded-lg shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+          </div>
+          <div class="min-w-0">
+            <span class="text-[9px] text-brand-muted block uppercase font-bold tracking-wider leading-none">Humidity</span>
+            <span id="humidity" class="text-xs md:text-sm font-bold text-brand-text truncate">--</span>
+          </div>
+        </div>
+        <!-- UV Index -->
+        <div class="bg-brand-dark/30 border border-brand-accent/5 rounded-xl p-2.5 flex items-center space-x-2">
+          <div class="text-brand-accent p-1 bg-brand-accent/10 rounded-lg shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+          <div class="min-w-0">
+            <span class="text-[9px] text-brand-muted block uppercase font-bold tracking-wider leading-none">UV Index</span>
+            <span id="uv-index" class="text-xs md:text-sm font-bold text-brand-text truncate">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outlook Description Section -->
+      <div id="outlook-section" class="mt-2 pt-4 border-t border-brand-accent/15 flex flex-col relative z-10 shrink-0 min-h-0">
+        <div class="flex justify-between items-center mb-1 bg-brand-dark/20 px-2 py-1 rounded shrink-0">
+          <span class="text-[10px] font-black text-brand-accent tracking-widest uppercase">Outlook for the Day</span>
+          <span id="temp-range" class="text-[10px] text-brand-muted font-bold tracking-wider">H: -- L: --</span>
+        </div>
+        <div class="overflow-y-auto custom-scrollbar max-h-24 pr-1">
+          <p id="outlook-summary" class="text-xs md:text-sm text-brand-text/90 leading-relaxed font-normal">
+            Loading daily summary...
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Background toast for smooth background error monitoring -->
+  <div id="error-toast" class="fixed bottom-4 right-4 bg-red-950/90 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md flex items-center space-x-3 translate-y-24 opacity-0 transition-all duration-300 z-50 max-w-sm">
+    <svg class="w-5 h-5 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <div class="text-xs font-medium">
+      <p class="font-bold text-red-100">Fetch Failed</p>
+      <p id="error-message">Unable to sync weather updates.</p>
+    </div>
+  </div>
+
+  <script>
+    // --- APP CONFIGURATION ---
+    const API_URL = "https://api.upperhaughweather.uk/weather";
+    const REFRESH_INTERVAL = 120000; // Background refreshes every 2 minutes
+    let updateTimer = null;
+    let failStreak = 0;
+
+    // --- STREAMING_CHUNK: Setting custom meteorology svg mapping... ---
+    // Custom SVGs fully adjusted to the brand palette
+    const WEATHER_ICONS = {
+      "01d": `<svg class="w-full h-full text-amber-300 animate-slow-spin" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 6.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11zm0 1a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zm0-4a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 12 3.5zm0 13a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75zm8.839-8.339a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 1 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0zm-13 13a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 0 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0zm13-13a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 0 1-1.06 1.06l-1.06-1.06a.75.75 0 0 1 0-1.06zm-13 13a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 0 1-1.06 1.06l-1.06-1.06a.75.75 0 0 1 0-1.06zM20.5 12a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75zm-13 0a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75z"/>
+              </svg>`,
+      "01n": `<svg class="w-full h-full text-slate-300" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12.3 2.1a1 1 0 0 1 .7 1.4 8 8 0 0 0 10.5 10.5 1 1 0 0 1 1.4.7 10 10 0 1 1-14-14 1 1 0 0 1 1.4.7z"/>
+              </svg>`,
+      "02d": `<svg class="w-full h-full" viewBox="0 0 24 24" fill="none">
+                <circle cx="9" cy="9" r="4" class="fill-amber-300" />
+                <path d="M6 18a4 4 0 011-7.87 5.5 5.5 0 0110.13-.13A4 4 0 0118 18H6z" class="fill-slate-400 stroke-[#94fdf8] stroke-width-[1]" />
+              </svg>`,
+      "02n": `<svg class="w-full h-full" viewBox="0 0 24 24" fill="none">
+                <path d="M12 3a7.5 7.5 0 005.3 12.8 5 5 0 01-10-10A7.5 7.5 0 0012 3z" class="fill-slate-500" />
+                <path d="M6 18a4 4 0 011-7.87 5.5 5.5 0 0110.13-.13A4 4 0 0118 18H6z" class="fill-slate-400 stroke-[#94fdf8] stroke-width-[1]" />
+              </svg>`,
+      "03d": `<svg class="w-full h-full" fill="none" stroke="#94fdf8" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" class="fill-brand-bg"/>
+              </svg>`,
+      "03n": `<svg class="w-full h-full" fill="none" stroke="#94fdf8" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" class="fill-brand-dark"/>
+              </svg>`,
+      "04d": `<svg class="w-full h-full" fill="none" stroke="#94fdf8" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" class="fill-brand-bg"/>
+              </svg>`,
+      "04n": `<svg class="w-full h-full" fill="none" stroke="#94fdf8" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" class="fill-brand-dark"/>
+              </svg>`,
+      "09d": `<svg class="w-full h-full animate-float" fill="none" stroke="#94fdf8" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" class="fill-brand-bg"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 20l-1 2m4-2l-1 2m4-2l-1 2" stroke-dasharray="2 2" />
+              </svg>`,
+      "09n": `<svg class="w-full h-full" fill="none" stroke="#94fdf8" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" class="fill-brand-dark"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 20l-1 2m4-2l-1 2m4-2l-1 2" stroke-dasharray="2 2" />
+              </svg>`,
+      "10d": `<svg class="w-full h-full" fill="none" stroke="#94fdf8" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" class="fill-brand-bg"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 20l-1 2m4-2l-1 2m4-2l-1 2" />
+              </svg>`,
+      "10n": `<svg class="w-full h-full" fill="none" stroke="#94fdf8" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" class="fill-brand-dark"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 20l-1 2m4-2l-1 2m4-2l-1 2" />
+              </svg>`,
+      "11d": `<svg class="w-full h-full" fill="none" stroke="#94fdf8" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" class="fill-brand-bg"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 18l-2 3h3l-2 3" class="text-amber-300 stroke-amber-300" />
+              </svg>`,
+      "11n": `<svg class="w-full h-full" fill="none" stroke="#94fdf8" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" class="fill-brand-dark"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 18l-2 3h3l-2 3" class="text-amber-300 stroke-amber-300" />
+              </svg>`,
+      "13d": `<svg class="w-full h-full" fill="none" stroke="#94fdf8" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" class="fill-brand-bg"/>
+                <path d="M8 20h.01M12 20h.01M16 20h.01M10 22h.01M14 22h.01" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+              </svg>`,
+      "50d": `<svg class="w-full h-full" fill="none" stroke="#94fdf8" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3h16.5m-13.5 3h10.5m-13.5-9h16.5m-16.5-3h16.5" />
+              </svg>`
+    };
+
+    const DEFAULT_ICON = `<svg class="w-full h-full" fill="none" stroke="#94fdf8" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707" />
+                          </svg>`;
+
+    // --- STREAMING_CHUNK: Referencing element nodes... ---
+    const tempEl = document.getElementById('current-temp');
+    const conditionMainEl = document.getElementById('condition-main');
+    const conditionDescEl = document.getElementById('condition-desc');
+    const iconEl = document.getElementById('weather-icon');
+    const feelsLikeEl = document.getElementById('feels-like');
+    const windSpeedEl = document.getElementById('wind-speed');
+    const humidityEl = document.getElementById('humidity');
+    const uvIndexEl = document.getElementById('uv-index');
+    const outlookSummaryEl = document.getElementById('outlook-summary');
+    const tempRangeEl = document.getElementById('temp-range');
+    const errorToast = document.getElementById('error-toast');
+    const errorMessage = document.getElementById('error-message');
+
+    // --- STREAMING_CHUNK: Error logging routines... ---
+    function showErrorToast(msg) {
+      errorMessage.textContent = msg;
+      errorToast.classList.remove('translate-y-24', 'opacity-0');
+      errorToast.classList.add('translate-y-0', 'opacity-100');
+      
+      setTimeout(() => {
+        errorToast.classList.add('translate-y-24', 'opacity-0');
+        errorToast.classList.remove('translate-y-0', 'opacity-100');
+      }, 7000);
+    }
+
+    // --- STREAMING_CHUNK: English Grammar Formatter... ---
+    function cleanGrammar(summary) {
+      if (!summary) return "";
+      let clean = summary.trim();
+      
+      // Fixes translation patterns like "There will be partly cloudy today" into "It will be partly cloudy today"
+      // while correctly leaving "There will be rain today" untouched.
+      if (/^There will be\s+(partly\s+|mostly\s+)?(cloudy|sunny|clear|overcast|windy|rainy|snowy|foggy|misty|hazy)/i.test(clean)) {
+        clean = clean.replace(/^There will be/i, 'It will be');
+      }
+      
+      return clean.charAt(0).toUpperCase() + clean.slice(1);
+    }
+
+    // --- STREAMING_CHUNK: Fetching live API weather info... ---
+    async function fetchWeather(backoffTime = 1000) {
+      try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+          throw new Error(`HTTP status error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data || !data.weather) {
+          throw new Error("Incorrect JSON weather format returned.");
+        }
+
+        failStreak = 0;
+        updateWidget(data.weather);
+
+      } catch (err) {
+        failStreak++;
+        console.error("Connection error on weather feed: ", err);
+
+        // Exponential backoff recovery (Up to 5 attempts)
+        if (failStreak <= 5) {
+          const nextRetry = backoffTime * 2;
+          setTimeout(() => fetchWeather(nextRetry), backoffTime);
+        } else {
+          showErrorToast("Could not fetch current weather updates. Reconnecting...");
+        }
+      }
+    }
+
+    // --- STREAMING_CHUNK: Processing weather metrics... ---
+    function updateWidget(weatherData) {
+      const current = weatherData.current;
+      const todayDaily = weatherData.daily?.[0];
+
+      if (!current) return;
+
+      // Current temperature
+      tempEl.textContent = Math.round(current.temp);
+
+      // Current Conditions
+      const mainCondition = current.weather?.[0]?.main || "Clouds";
+      const conditionDesc = current.weather?.[0]?.description || "Overcast clouds";
+      conditionMainEl.textContent = mainCondition;
+      conditionDescEl.textContent = conditionDesc;
+
+      // Assign custom SVG weather icon
+      const iconCode = current.weather?.[0]?.icon;
+      const matchingIcon = WEATHER_ICONS[iconCode] || WEATHER_ICONS[iconCode.substring(0, 2) + 'd'] || DEFAULT_ICON;
+      iconEl.innerHTML = matchingIcon;
+
+      // Detail metrics
+      feelsLikeEl.textContent = `${Math.round(current.feels_like)}°C`;
+      windSpeedEl.textContent = `${Math.round(current.wind_speed * 2.237)} mph`;
+      humidityEl.textContent = `${current.humidity}%`;
+      uvIndexEl.textContent = current.uvi !== undefined ? current.uvi : '--';
+
+      // Daily Outlook with clean grammar parsing
+      if (todayDaily) {
+        const rawSummary = todayDaily.summary || `Expect ${todayDaily.weather?.[0]?.description || 'similar conditions'} throughout the day.`;
+        outlookSummaryEl.textContent = cleanGrammar(rawSummary);
+        
+        const maxTemp = Math.round(todayDaily.temp.max);
+        const minTemp = Math.round(todayDaily.temp.min);
+        tempRangeEl.textContent = `H: ${maxTemp}°C  L: ${minTemp}°C`;
+      } else {
+        outlookSummaryEl.textContent = "Expect continuing meteorological outlook in Upper Haugh today.";
+        tempRangeEl.textContent = '--';
+      }
+    }
+
+    // --- STREAMING_CHUNK: Launching refresh loops... ---
+    window.onload = function() {
+      fetchWeather();
+
+      // Trigger standard background refresh process (2 minutes)
+      updateTimer = setInterval(() => {
+        fetchWeather();
+      }, REFRESH_INTERVAL);
+    };
+
+    window.onunload = function() {
+      if (updateTimer) clearInterval(updateTimer);
+    };
+  </script>
+</body>
+</html>
