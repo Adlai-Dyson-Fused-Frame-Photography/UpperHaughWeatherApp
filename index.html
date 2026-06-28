@@ -1,33 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Upper Haugh Weather</title>
-  
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Icons (Lucide) -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  
-  <!-- Leaflet CSS & JS for Radar Map -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- Chart.js for Historical Data -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- PWA & Mobile Meta Tags -->
+  <!-- Removed Inter font link -->
   <meta name="theme-color" content="#1e374d">
-  <!-- The manifest is dynamically generated via JS at the bottom to maintain a single-file architecture -->
-  <link id="pwa-manifest" rel="manifest" href="">
+  <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="https://cdn-eu.fusedframe.co.uk/services/upperhaugh-weather-app/logos/squarefavicon-transparent.png">
   <link rel="apple-touch-icon" href="https://cdn-eu.fusedframe.co.uk/services/upperhaugh-weather-app/logos/squarefavicon-transparent.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="UH Weather">
-  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
     /* --- Font Setup (Aptos) --- */
     @font-face {
@@ -36,6 +23,7 @@
       font-weight: 400;
       font-style: normal;
     }
+
     @font-face {
       font-family: 'Aptos';
       src: url('https://cdn-eu.fusedframe.co.uk/fonts/aptos/aptos-bold.woff2') format('woff2');
@@ -43,355 +31,456 @@
       font-style: normal;
     }
 
-    /* --- Theme Variables --- */
+    /* --- Color Variables (Modified for White body text) --- */
     :root {
-      --bg-start: #111827;
+      --bg: #111827;
       --bg-end: #1e374d;
-      --text-main: #ffffff;
-      --accent: #94fdf8;
-      --glass-bg: rgba(30, 55, 77, 0.4);
-      --glass-border: rgba(148, 253, 248, 0.15);
-      --glass-shadow: rgba(0, 0, 0, 0.25);
+      /* NEW: Gradient end color */
+      --general-text: #ffffff;
+      /* General body text color (White) */
+      --header-color: #94fdf8;
+      /* Accent color for titles/headers */
+      --card-bg: rgba(30, 55, 77, 0.5);
+      /* Slightly less opaque for better glass effect */
+      --border: rgba(148, 253, 248, 0.2);
+      /* Slightly lighter border */
+      --sec: #94fdf8;
+      /* Used for progress bars/accents */
+      --sec-light: rgba(148, 253, 248, 0.7);
     }
 
+    body.amoled-mode {
+      --bg: #000;
+      --bg-end: #000;
+      /* NEW: Use pure black for the end color in AMOLED for maximum darkness */
+      --general-text: #ffffff;
+      --header-color: #ffffff;
+      /* Use white in AMOLED mode for contrast */
+      --card-bg: rgba(18, 18, 18, 0.75);
+      --border: rgba(255, 255, 255, 0.1);
+      --sec: #fff;
+      --sec-light: rgba(255, 255, 255, 0.8);
+    }
+
+    /* --- Base Styles (Updated Font and Color) --- */
     body {
       font-family: 'Aptos', sans-serif;
-      background-image: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
-      background-attachment: fixed;
-      color: var(--text-main);
-      min-height: 100vh;
+      background-color: var(--bg);
+      color: var(--general-text);
+      /* Uses white/light text as base */
       margin: 0;
-      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      /* Fade transition for theme change: ADDED background-image for smoother visual gradient change */
+      transition: background-color 0.5s ease, color 0.5s ease, background-image 0.5s ease;
+      /* Subtle background gradient for depth - NOW uses the new --bg-end variable */
+      background-image: linear-gradient(135deg, var(--bg) 0%, var(--bg-end) 100%);
     }
 
-    /* --- Glassmorphism Elements --- */
-    .glass-panel {
-      background: var(--glass-bg);
-      border: 1px solid var(--glass-border);
-      border-radius: 1.25rem;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 8px 32px 0 var(--glass-shadow);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    .weather-card {
+      /* --- Glassmorphism Effect --- */
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 1.5rem;
+      /* More rounded corners */
+      padding: 1.5rem;
+      /* Increased padding */
+      margin-bottom: 1.5rem;
+      /* Increased spacing */
+      backdrop-filter: blur(18px);
+      /* Frosted Glass */
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      /* Lifted shadow */
+      transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.5s ease;
+      /* Added background transition */
     }
 
-    .glass-panel:hover {
+    .weather-card:hover {
+      transform: translateY(-2px);
       box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
     }
 
-    .accent-text { color: var(--accent); }
-    .accent-bg { background-color: var(--accent); }
+    /* Apply header color to all card titles */
+    .weather-card h2 {
+      color: var(--header-color);
+      transition: color 0.5s ease;
+    }
 
-    /* --- Custom Scrollbar for horizontal views --- */
-    .scroll-x-hidden {
+    /* --- Scrollable Content --- */
+    .scrollable-x {
       overflow-x: auto;
       scrollbar-width: none;
     }
-    .scroll-x-hidden::-webkit-scrollbar { display: none; }
+
+    .scrollable-x::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* --- Progress Bars (Modernized) --- */
+    .progress-bar-container {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      /* Lighter track */
+      border-radius: 9999px;
+      height: 8px;
+      /* Thinner */
+      margin-top: 0.75rem;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: var(--sec);
+      border-radius: 9999px;
+      box-shadow: 0 0 8px var(--sec-light);
+      /* Subtle glow on the bar */
+      transition: width 1s ease-out, background 0.5s;
+    }
 
     /* --- Loading Spinner --- */
-    .spinner {
+    .loading-spinner {
+      border: 4px solid rgba(148, 253, 248, 0.3);
+      border-top: 4px solid var(--sec);
+      border-radius: 50%;
       width: 50px;
       height: 50px;
-      border: 4px solid rgba(148, 253, 248, 0.2);
-      border-top-color: var(--accent);
-      border-radius: 50%;
       animation: spin 1s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* --- Map & Charts --- */
-    #map { height: 400px; border-radius: 1rem; z-index: 10; }
-    
-    /* Toggle active states */
-    .tab-btn.active {
-      background: var(--accent);
-      color: #111827;
-      font-weight: 700;
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
     }
 
-    .lucide { width: 1.5rem; height: 1.5rem; }
+    /* --- Hourly Forecast Styles --- */
+    .hourly-time {
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      align-items: baseline;
+      font-size: 0.9rem;
+    }
+
+    .hourly-time .time {
+      font-weight: 700;
+      color: var(--sec);
+    }
+
+    .hourly-time .ampm {
+      font-size: 0.75rem;
+      color: var(--sec-light);
+    }
+
+    .bar {
+      width: 4px;
+      /* Slightly thicker */
+      margin: 0 2px;
+      background: #63b3ed;
+      /* Keep rain color consistent */
+      display: inline-block;
+      border-radius: 3px;
+      transition: height 0.3s ease-out;
+    }
+
+    /* --- Call-to-action Links (Modernized) --- */
+    .cta-link-section a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 280px;
+      /* Standardized width */
+      background-color: var(--sec);
+      color: var(--bg);
+      /* Inverted text for high contrast */
+      font-weight: 700;
+      padding: 0.75rem 1.5rem;
+      border-radius: 1rem;
+      font-size: 1rem;
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+      box-shadow: 0 4px 15px rgba(148, 253, 248, 0.2);
+    }
+
+    .cta-link-section a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(148, 253, 248, 0.4);
+      opacity: 0.9;
+    }
   </style>
 </head>
-<body class="p-4 md:p-6 lg:p-8 flex flex-col items-center">
 
-  <!-- Setup Loading Overlay -->
-  <div id="loader" class="fixed inset-0 bg-[#111827] z-50 flex flex-col items-center justify-center transition-opacity duration-500">
-    <div class="spinner mb-4"></div>
-    <p class="text-white/70 tracking-widest text-sm uppercase">Syncing Atmospheric Data</p>
+<body>
+  <!-- Loading State -->
+  <div id="loading" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 transition-opacity duration-500">
+    <div class="loading-spinner"></div>
+  </div>
+  <div id="error" class="hidden text-red-400 text-center p-4 font-bold transition-opacity duration-500">
+    <i class="fa-solid fa-triangle-exclamation mr-2"></i>Unable to load weather data. Please check the API status.
   </div>
 
-  <div class="w-full max-w-5xl mx-auto relative flex flex-col gap-6">
+  <!-- Main Weather App Content -->
+  <main id="weather-app" class="hidden p-4 w-full max-w-5xl mx-auto relative">
 
-    <!-- Top Controls Header (Location & Units) -->
-    <header class="flex justify-between items-center glass-panel p-3 px-5 z-40">
-      <div class="flex items-center gap-3">
-        <img src="https://cdn-eu.fusedframe.co.uk/services/upperhaugh-weather-app/logos/squarefavicon-transparent.png" alt="Logo" class="w-8 h-8 opacity-90" />
-        <select id="location-select" class="bg-transparent text-lg font-bold outline-none text-white cursor-pointer appearance-none">
-          <option value="upper_haugh" class="text-black">Upper Haugh</option>
-          <option value="rotherham" class="text-black">Rotherham</option>
-        </select>
-        <i data-lucide="chevron-down" class="w-4 h-4 text-white/50"></i>
-      </div>
-      
-      <div class="flex bg-black/20 rounded-full p-1 border border-white/10">
-        <button id="unit-c" class="px-3 py-1 rounded-full text-sm font-bold transition-all text-white bg-white/20">°C</button>
-        <button id="unit-f" class="px-3 py-1 rounded-full text-sm font-bold transition-all text-white/50 hover:text-white">°F</button>
-      </div>
-    </header>
-
-    <!-- Prominent Weather Alerts (Hidden by default) -->
-    <div id="alerts-container" class="hidden flex-col gap-3">
-      <!-- Alerts generated dynamically here -->
+    <!-- Theme Toggle (Positioned top right) -->
+    <div class="absolute top-4 right-4 md:top-8 md:right-8 z-10">
+      <button id="amoled-toggle" class="bg-gray-700 text-white p-3 rounded-full hover:bg-gray-600 transition duration-300 shadow-lg" title="Toggle Dark/AMOLED Mode">
+        <i id="theme-icon" class="fa-regular fa-moon text-lg"></i>
+      </button>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="flex justify-center mb-2">
-      <div class="flex gap-2 glass-panel p-1.5 rounded-full w-full max-w-md">
-        <button class="tab-btn active flex-1 py-2 rounded-full text-sm transition-all" data-target="view-dashboard">Dashboard</button>
-        <button class="tab-btn flex-1 py-2 rounded-full text-sm transition-all" data-target="view-history">History</button>
-        <button class="tab-btn flex-1 py-2 rounded-full text-sm transition-all" data-target="view-map">Radar Map</button>
+    <!-- Date, Divider, and Location Title (Centered and Enlarged) -->
+    <div class="text-center py-2 mb-6 transition-all duration-500">
+      <p id="current-date" class="text-base font-semibold text-white opacity-80 mb-2 transition-all duration-500"></p>
+      <div class="w-24 mx-auto border-t border-white border-opacity-10 mb-4 transition-all duration-500"></div>
+      <h1 id="location" class="text-4xl sm:text-5xl font-extrabold" style="color: var(--header-color); transition: color 0.5s ease;">Upper Haugh</h1>
+    </div>
+
+    <!-- Current Weather Overview -->
+    <section class="text-center mb-8">
+      <p id="current-temp" class="text-7xl font-light my-2 leading-none text-white transition-all duration-500">--°C</p>
+      <p id="weather-description" class="text-2xl capitalize font-medium text-white opacity-90 transition-all duration-500">...</p>
+      <p id="feels-like" class="text-lg opacity-70 mt-1 transition-all duration-500">Feels like: --°C</p>
+    </section>
+
+    <!-- Main content grid -->
+    <div class="flex flex-col md:flex-row md:gap-5 md:items-stretch">
+      <!-- Left Column (Hourly & Daily Forecasts) -->
+      <div class="md:w-1/2 md:flex md:flex-col">
+        <!-- Hourly Forecast Card -->
+        <section class="weather-card">
+          <h2 class="text-xl font-semibold flex items-center mb-2">
+            <i class="fa-solid fa-hourglass-start mr-3 opacity-80"></i>Hourly Forecast
+          </h2>
+          <!-- Hourly summary description added here -->
+          <p id="hourly-summary" class="text-sm opacity-80 mb-2 border-b border-white border-opacity-10 pb-2"></p>
+          <div id="hourly-forecast" class="flex scrollable-x space-x-4 py-2"></div>
+        </section>
+
+        <!-- 10-Day Forecast Card -->
+        <section class="weather-card flex-grow">
+          <h2 class="text-xl font-semibold flex items-center mb-4">
+            <i class="fa-solid fa-calendar-days mr-3 opacity-80"></i>8 Day Forecast
+          </h2>
+          <div class="flex justify-between text-sm opacity-70 mb-2 px-3 border-b border-opacity-30 border-current pb-1">
+            <span class="w-2/5">Day</span>
+            <span class="w-1/5 text-center">Low</span>
+            <span class="w-1/5 text-center">High</span>
+            <span class="w-1/5 text-right">Rain (<i class="fa-solid fa-droplet"></i>)</span>
+          </div>
+          <div id="daily-forecast" class="flex flex-col space-y-1"></div>
+        </section>
+      </div>
+
+      <!-- Right Column (Details) - Added md:justify-between for alignment -->
+      <div class="md:w-1/2 md:flex md:flex-col md:justify-between">
+        <div class="w-full"> <!-- Wrapper for top aligned cards -->
+            <!-- Weather Alerts Card -->
+            <section id="weather-alerts-section" class="weather-card hidden">
+              <h2 class="text-xl font-semibold flex items-center mb-2 text-yellow-300" style="color: var(--header-color);">
+                <i class="fa-solid fa-bell mr-3"></i>Weather Alerts
+              </h2>
+              <div id="weather-alerts-content"></div>
+            </section>
+
+            <!-- Precipitation Card -->
+            <section class="weather-card flex flex-row justify-between items-center">
+              <h2 class="text-lg font-semibold flex items-center opacity-90"><i class="fa-solid fa-cloud-rain mr-3"></i>Precipitation</h2>
+              <div class="text-right">
+                <p id="precip-now" class="text-xl font-medium text-white">-- mm</p>
+                <p id="precip-chance" class="text-sm opacity-70">--% chance</p>
+              </div>
+            </section>
+
+            <!-- Humidity Card -->
+            <section class="weather-card flex flex-row justify-between items-center">
+              <h2 class="text-lg font-semibold flex items-center opacity-90"><i class="fa-solid fa-droplet mr-3"></i>Humidity</h2>
+              <div class="text-right">
+                <p id="humidity-value" class="text-xl font-medium text-white">--%</p>
+                <p id="humidity-status" class="text-sm opacity-70">--</p>
+              </div>
+            </section>
+
+            <!-- Wind Card -->
+            <section class="weather-card flex flex-row justify-between items-center">
+              <h2 class="text-lg font-semibold flex items-center opacity-90"><i class="fa-solid fa-wind mr-3"></i>Wind</h2>
+              <div class="text-right">
+                <p id="wind-speed" class="text-xl font-medium text-white">-- mph</p>
+                <p id="wind-direction" class="text-sm opacity-70">--</p>
+              </div>
+            </section>
+        </div>
+
+        <div class="w-full"> <!-- Wrapper for bottom aligned cards -->
+            <!-- Air Quality Card (Centered) -->
+            <section class="weather-card">
+              <h2 class="text-xl font-semibold flex items-center justify-center mb-2"><i class="fa-solid fa-smog mr-3"></i>Air Quality</h2>
+              <div class="text-center">
+                <p id="aq-status" class="text-xl font-medium text-white">--</p>
+                <p id="aq-value" class="text-sm opacity-70">AQI: --</p>
+              </div>
+              <div class="progress-bar-container">
+                <div id="aq-bar" class="progress-bar"></div>
+              </div>
+            </section>
+
+            <!-- UV Index Card (Centered) -->
+            <section class="weather-card">
+              <h2 class="text-xl font-semibold flex items-center justify-center mb-2"><i class="fa-solid fa-sun mr-3"></i>UV Index</h2>
+              <div class="text-center">
+                <p id="uv-value" class="text-xl font-medium text-white">--</p>
+                <p id="uv-status" class="text-sm opacity-70">--</p>
+              </div>
+              <div class="progress-bar-container">
+                <div id="uv-bar" class="progress-bar"></div>
+              </div>
+              <p id="uv-advice" class="text-xs opacity-70 mt-3 text-center italic"></p>
+            </section>
+
+            <!-- Visibility Card - NEW -->
+            <section class="weather-card">
+              <h2 class="text-xl font-semibold flex items-center justify-center mb-2"><i class="fa-solid fa-eye mr-3"></i>Visibility</h2>
+              <div class="text-center">
+                <p id="visibility-value" class="text-xl font-medium text-white">-- mi</p>
+                <p id="visibility-status" class="text-sm opacity-70">--</p>
+              </div>
+            </section>
+
+            <!-- Pressure Card - NEW -->
+            <section class="weather-card">
+              <h2 class="text-xl font-semibold flex items-center justify-center mb-2"><i class="fa-solid fa-gauge-high mr-3"></i>Pressure</h2>
+              <div class="text-center">
+                <p id="pressure-value" class="text-xl font-medium text-white">-- hPa</p>
+                <p id="pressure-status" class="text-sm opacity-70">--</p>
+              </div>
+            </section>
+        </div>
       </div>
     </div>
 
-    <!-- ==================== VIEW: DASHBOARD ==================== -->
-    <div id="view-dashboard" class="flex flex-col gap-6 view-section active">
-      
-      <!-- Current Overview -->
-      <section class="text-center py-6">
-        <p id="current-date" class="text-base font-medium text-white/70 uppercase tracking-widest mb-4"></p>
-        <div class="flex justify-center items-center gap-6 mb-2">
-          <div id="current-icon-container" class="text-white drop-shadow-lg">
-             <i data-lucide="cloud" class="w-20 h-20 sm:w-24 sm:h-24"></i>
+    <!-- Next Hour Precipitation Graph -->
+    <section id="precip-section" class="weather-card hidden">
+      <h2 class="text-xl font-semibold flex items-center mb-4">
+        <i class="fa-solid fa-cloud-showers-heavy mr-3 opacity-80"></i>Next Hour Precipitation
+      </h2>
+      <div id="precip-graph" class="w-full h-24 flex items-end justify-center rounded-lg overflow-hidden bg-gray-900 bg-opacity-20 p-2"></div>
+      <p id="precip-info" class="text-sm opacity-70 mt-4 text-center"></p>
+    </section>
+
+    <!-- Sun & Moon Card -->
+    <section class="weather-card">
+      <h2 class="text-xl font-semibold flex items-center mb-4"><i class="fa-solid fa-sun-plant-wilt mr-3 opacity-80"></i>Sun & Moon</h2>
+      <div class="flex flex-col space-y-4">
+        <!-- Sunrise/Sunset -->
+        <div class="flex justify-around items-center">
+          <div class="text-center">
+            <h3 class="text-lg font-medium opacity-90">Sunrise</h3>
+            <p id="sunrise" class="opacity-70">--</p>
           </div>
-          <h1 id="current-temp" class="text-8xl sm:text-9xl font-light text-white tracking-tighter drop-shadow-md">--°</h1>
+          <div class="text-center">
+            <h3 class="text-lg font-medium opacity-90">Sunset</h3>
+            <p id="sunset" class="opacity-70">--</p>
+          </div>
         </div>
-        <p id="weather-desc" class="text-3xl font-medium text-white capitalize mt-2 accent-text"></p>
-        <p id="feels-like" class="text-lg text-white/70 mt-1">Feels like --°</p>
-      </section>
-
-      <!-- Main Layout Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-        
-        <!-- Left Column: Timelines -->
-        <div class="flex flex-col gap-6 h-full">
-          
-          <!-- Hourly Forecast -->
-          <section class="glass-panel p-5">
-            <div class="flex items-center gap-2 mb-4 border-b border-white/10 pb-3">
-              <i data-lucide="clock" class="text-white/60"></i>
-              <h2 class="text-xl font-semibold accent-text">24-Hour Forecast</h2>
-            </div>
-            <div id="hourly-forecast" class="flex scroll-x-hidden space-x-3 py-2 snap-x">
-              <!-- JS Injected -->
-            </div>
-          </section>
-
-          <!-- Daily Forecast -->
-          <section class="glass-panel p-5 flex-1 flex flex-col">
-            <div class="flex items-center gap-2 mb-4 border-b border-white/10 pb-3">
-              <i data-lucide="calendar-days" class="text-white/60"></i>
-              <h2 class="text-xl font-semibold accent-text">8-Day Forecast</h2>
-            </div>
-            <div id="daily-forecast" class="flex flex-col gap-2 flex-1 justify-around">
-              <!-- JS Injected -->
-            </div>
-          </section>
-        </div>
-
-        <!-- Right Column: Details -->
-        <div class="grid grid-cols-2 gap-4 h-full">
-          
-          <!-- Precip -->
-          <div class="glass-panel p-5 flex flex-col justify-between min-h-[160px]">
-            <div class="flex items-center gap-2 text-white/70"><i data-lucide="cloud-rain" class="w-6 h-6"></i><span class="text-base font-medium">Rainfall</span></div>
-            <div>
-              <p id="precip-val" class="text-4xl font-semibold text-white">-- <span class="text-lg font-normal">mm</span></p>
-              <p id="precip-chance" class="text-base text-white/60">--% chance</p>
-            </div>
+        <hr class="border-current opacity-20 my-2" />
+        <!-- Moonrise/Moonset/Phase -->
+        <div class="flex flex-wrap justify-around items-start">
+          <div class="text-center w-1/3 min-w-[120px] mb-2">
+            <h3 class="text-lg font-medium opacity-90">Moonrise</h3>
+            <p id="moon-rise" class="opacity-70">--</p>
           </div>
-
-          <!-- Wind -->
-          <div class="glass-panel p-5 flex flex-col justify-between min-h-[160px]">
-            <div class="flex items-center gap-2 text-white/70"><i data-lucide="wind" class="w-6 h-6"></i><span class="text-base font-medium">Wind</span></div>
-            <div>
-              <p id="wind-val" class="text-4xl font-semibold text-white">-- <span class="text-lg font-normal">mph</span></p>
-              <p id="wind-dir" class="text-base text-white/60">--</p>
-            </div>
+          <div class="text-center w-1/3 min-w-[120px] mb-2">
+            <h3 class="text-lg font-medium opacity-90">Moonset</h3>
+            <p id="moon-set" class="opacity-70">--</p>
           </div>
-
-          <!-- Humidity -->
-          <div class="glass-panel p-5 flex flex-col justify-between min-h-[160px]">
-            <div class="flex items-center gap-2 text-white/70"><i data-lucide="droplets" class="w-6 h-6"></i><span class="text-base font-medium">Humidity</span></div>
-            <div>
-              <p id="humidity-val" class="text-4xl font-semibold text-white">--%</p>
-              <p id="humidity-status" class="text-base text-white/60">--</p>
-            </div>
-          </div>
-
-          <!-- UV Index -->
-          <div class="glass-panel p-5 flex flex-col justify-between min-h-[160px]">
-            <div class="flex items-center gap-2 text-white/70"><i data-lucide="sun" class="w-6 h-6"></i><span class="text-base font-medium">UV Index</span></div>
-            <div>
-              <p id="uv-val" class="text-4xl font-semibold text-white">--</p>
-              <p id="uv-status" class="text-base text-white/60">--</p>
-            </div>
-          </div>
-
-          <!-- Visibility -->
-          <div class="glass-panel p-5 flex flex-col justify-between min-h-[160px]">
-            <div class="flex items-center gap-2 text-white/70"><i data-lucide="eye" class="w-6 h-6"></i><span class="text-base font-medium">Visibility</span></div>
-            <div>
-              <p id="visibility-val" class="text-4xl font-semibold text-white">-- <span class="text-lg font-normal">mi</span></p>
-              <p id="visibility-status" class="text-base text-white/60">--</p>
-            </div>
-          </div>
-
-          <!-- Pressure -->
-          <div class="glass-panel p-5 flex flex-col justify-between min-h-[160px]">
-            <div class="flex items-center gap-2 text-white/70"><i data-lucide="gauge" class="w-6 h-6"></i><span class="text-base font-medium">Pressure</span></div>
-            <div>
-              <p id="pressure-val" class="text-4xl font-semibold text-white">-- <span class="text-lg font-normal">hPa</span></p>
-              <p id="pressure-status" class="text-base text-white/60">--</p>
-            </div>
+          <div class="text-center w-full mt-4">
+            <h3 class="text-lg font-medium opacity-90">Moon Phase</h3>
+            <p id="moon-phase" class="opacity-70">--</p>
+            <p id="moon-illum" class="text-sm opacity-50">--%</p>
           </div>
         </div>
       </div>
+    </section>
 
-      <!-- Sun & Moon (Now spans the full width at the bottom, outside the split columns) -->
-      <div class="glass-panel p-6 w-full flex flex-col gap-4 mt-2">
-         <div class="flex items-center gap-2 border-b border-white/10 pb-3 text-white/70">
-            <i data-lucide="eclipse" class="w-6 h-6"></i><span class="text-base font-medium">Sun & Moon</span>
-         </div>
-         <div class="flex justify-between items-center px-4 md:px-12">
-            <div class="text-center">
-              <p class="text-sm text-white/60 mb-1">Sunrise</p>
-              <p id="sunrise-val" class="text-xl md:text-2xl font-medium text-white">--:--</p>
-            </div>
-            <div class="text-center">
-              <p class="text-sm text-white/60 mb-1">Moon Phase</p>
-              <p id="moon-val" class="text-xl md:text-2xl font-medium text-white">--</p>
-            </div>
-            <div class="text-center">
-              <p class="text-sm text-white/60 mb-1">Sunset</p>
-              <p id="sunset-val" class="text-xl md:text-2xl font-medium text-white">--:--</p>
-            </div>
-         </div>
-      </div>
-      
-    </div>
+    <!-- Call to Action Links - UPDATED -->
+    <section class="mt-8 flex flex-col md:flex-row items-center justify-center md:space-x-4 space-y-4 md:space-y-0 text-center cta-link-section">
+      <a href="https://adffp.uk/uhwapptools" title="Learn more about the technology used">
+        Learn more about this tool
+      </a>
+      <a href="https://adffp.uk/uhwappgithub" title="View the source code on GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 mr-2">
+          <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-1.8c-3.2.7-3.8-1.5-3.8-1.5-.5-1.2-1.2-1.5-1.2-1.5-1-.7.1-.7.1-.7 1.1.1 1.7 1.1 1.7 1.1.9.1 1.7-.8 1.7-.8.3-1.1.8-1.4 1.2-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2 1-.3 2.1-.5 3.1-.5s2.1.2 3.1.5c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.3.8 1 .8 2v3c0 .3.2.6.8.5C20.7 21.4 24 17.1 24 12c0-6.35-5.15-11.5-12-11.5z" />
+        </svg>
+        View on GitHub
+      </a>
+    </section>
 
-    <!-- ==================== VIEW: HISTORY ==================== -->
-    <div id="view-history" class="hidden flex-col gap-6 view-section">
-      <section class="glass-panel p-5 w-full">
-        <div class="flex items-center gap-2 mb-4 border-b border-white/10 pb-3">
-          <i data-lucide="history" class="text-white/60"></i>
-          <h2 class="text-lg font-semibold accent-text">30-Day Historical Trends</h2>
-        </div>
-        <p class="text-sm text-white/60 mb-4">Review the temperature highs and lows for the past month.</p>
-        <div class="w-full h-80 relative">
-          <canvas id="historyChart"></canvas>
-        </div>
-      </section>
-    </div>
+    <!-- Footer Logo and Info -->
+    <section class="text-center mt-10 mb-4">
+      <img src="https://cdn-eu.fusedframe.co.uk/services/upperhaugh-weather-app/logos/bannerlogo-transparent.png" alt="Upper Haugh Weather Logo" class="mx-auto max-w-xs w-full h-auto opacity-80" />
+    </section>
 
-    <!-- ==================== VIEW: RADAR MAP ==================== -->
-    <div id="view-map" class="hidden flex-col gap-6 view-section">
-      <section class="glass-panel p-5 w-full">
-        <div class="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
-          <div class="flex items-center gap-2">
-            <i data-lucide="map" class="text-white/60"></i>
-            <h2 class="text-lg font-semibold accent-text">Live Rain Radar</h2>
-          </div>
-          <span id="map-time-label" class="text-xs font-semibold bg-white/10 px-2 py-1 rounded-md text-white">Latest Data</span>
-        </div>
-        <!-- Leaflet Map Container -->
-        <div id="map" class="w-full shadow-inner bg-gray-900 border border-white/10"></div>
-      </section>
-    </div>
-
-    <!-- Footer -->
-    <footer class="text-center mt-8 pb-8 text-white/40 text-xs">
-      <p>Upper Haugh & Rotherham Weather</p>
-      <p class="mt-1">Data provided by OpenWeatherMap, RainViewer and Leaflet</p>
+    <footer class="text-center text-sm p-4 opacity-60">
+      <p class="font-bold">Upper Haugh Weather</p>
+      <p class="text-xs mt-1">
+        Data from Open Weather Map (
+        <a href="https://api.upperhaughweather.uk/weather" class="underline hover:opacity-100 transition" target="_blank">api.upperhaughweather.uk/weather</a>)
+      </p>
+      <p class="mt-2">
+        <a href="https://adlaidyson.co.uk" class="underline hover:opacity-100 transition" target="_blank">Made by Adlai Dyson | Fused Frame Photography</a>
+      </p>
     </footer>
-
-  </div>
-
+  </main>
   <script>
-    // --- Dynamic PWA Implementation (Single-File Mandate) ---
-    const initPWA = () => {
-      // Generate standard manifest.json in memory
-      const manifest = {
-        name: "Upper Haugh Weather",
-        short_name: "UH Weather",
-        description: "Local weather dataset for Upper Haugh & Rotherham",
-        start_url: "./",
-        display: "standalone",
-        background_color: "#111827",
-        theme_color: "#1e374d",
-        icons: [{
-          src: "https://cdn-eu.fusedframe.co.uk/services/upperhaugh-weather-app/logos/squarefavicon-transparent.png",
-          sizes: "512x512",
-          type: "image/png",
-          purpose: "any maskable"
-        }]
+    // Global functions for theme and formatting
+    const toggle = document.getElementById('amoled-toggle'),
+      icon = document.getElementById('theme-icon');
+
+    function setTheme(val) {
+      document.body.classList.toggle('amoled-mode', val);
+      icon.classList.toggle('fa-sun', val);
+      icon.classList.toggle('fa-moon', !val);
+      localStorage.setItem('amoled', val);
+    }
+    toggle.addEventListener('click', () => {
+      setTheme(!document.body.classList.contains('amoled-mode'));
+    });
+    setTheme(localStorage.getItem('amoled') === 'true');
+
+    function formatTime(ts) {
+      const d = new Date(ts * 1000),
+        h = ((d.getHours() + 11) % 12) + 1,
+        m = d.getMinutes(),
+        a = d.getHours() >= 12 ? 'PM' : 'AM';
+      return {
+        time: `${h}:${m.toString().padStart(2, '0')}`,
+        ampm: a
       };
-      
-      const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-      document.getElementById('pwa-manifest').href = URL.createObjectURL(manifestBlob);
+    }
 
-      // Generate Service Worker in memory
-      if ('serviceWorker' in navigator) {
-        const swCode = `
-          const CACHE_NAME = 'uh-weather-v2';
-          self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
-          self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
-          self.addEventListener('fetch', e => {
-            if (e.request.method !== 'GET') return;
-            e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
-          });
-        `;
-        const swBlob = new Blob([swCode], { type: 'application/javascript' });
-        navigator.serviceWorker.register(URL.createObjectURL(swBlob))
-          .then(() => console.log('Service Worker successfully installed for PWA!'))
-          .catch(err => console.log('Service worker scope limit (typical on local/blob environments), deploy to secure server to enable offline.', err));
-      }
-    };
-    initPWA();
+    function windDegToCompass(num) {
+      const val = Math.floor((num / 22.5) + 0.5);
+      const arr = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
+        'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'
+      ];
+      return arr[(val % 16)];
+    }
 
-    // --- Configuration & State Management ---
-    const API_BASE = 'https://v2-api.upperhaughweather.uk';
-    
-    // Load preferences from localStorage or set defaults
-    let state = {
-      location: localStorage.getItem('weather_loc') || 'upper_haugh',
-      unit: localStorage.getItem('weather_unit') || 'C', // 'C' or 'F'
-    };
+    function formatDate(ts) {
+      if (!ts) return '--';
+      const d = new Date(ts * 1000);
+      return d.toLocaleTimeString(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
 
-    // References to charts/maps to prevent re-initialization
-    let historyChartInstance = null;
-    let leafletMapInstance = null;
-    let radarLayer = null;
-
-    // --- Utility Functions ---
-    const convertTemp = (celsiusStr) => {
-      let c = parseFloat(celsiusStr);
-      if (isNaN(c)) return '--';
-      return state.unit === 'F' ? Math.round(c * 9/5 + 32) : Math.round(c);
-    };
-
-    const formatTime = (ts) => {
-      return new Date(ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    };
-
-    const getWindDirection = (deg) => {
-      const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
-      return dirs[Math.round(deg / 22.5) % 16];
-    };
-
-    // Updated with unabbreviated phase names
-    const getMoonPhase = (phase) => {
+    function moonPhaseText(phase) {
+      if (phase === undefined) return '--';
       if (phase === 0 || phase === 1) return 'New Moon';
       if (phase < 0.25) return 'Waxing Crescent';
       if (phase === 0.25) return 'First Quarter';
@@ -399,390 +488,294 @@
       if (phase === 0.5) return 'Full Moon';
       if (phase < 0.75) return 'Waning Gibbous';
       if (phase === 0.75) return 'Last Quarter';
-      return 'Waning Crescent';
-    };
+      if (phase < 1) return 'Waning Crescent';
+      return '--';
+    }
 
-    const mapIconCodeToLucide = (id, iconCode) => {
-      const isNight = iconCode.includes('n');
-      if (id >= 200 && id < 300) return 'cloud-lightning';
-      if (id >= 300 && id < 400) return 'cloud-drizzle';
-      if (id >= 500 && id < 600) return 'cloud-rain';
-      if (id >= 600 && id < 700) return 'cloud-snow';
-      if (id >= 700 && id < 800) return 'haze';
-      if (id === 800) return isNight ? 'moon' : 'sun';
-      if (id === 801 || id === 802) return isNight ? 'cloud-moon' : 'cloud-sun';
-      return 'cloud';
-    };
-
-    // --- Tab Switching Logic ---
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-accent', 'text-[#111827]'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.add('text-white/70'));
-        e.target.classList.add('active');
-        
-        document.querySelectorAll('.view-section').forEach(sec => sec.classList.add('hidden'));
-        const targetId = e.target.getAttribute('data-target');
-        document.getElementById(targetId).classList.remove('hidden');
-        document.getElementById(targetId).classList.add('flex');
-
-        // Refresh Leaflet size when map container becomes visible
-        if (targetId === 'view-map' && leafletMapInstance) {
-          setTimeout(() => leafletMapInstance.invalidateSize(), 100);
-        }
-      });
-    });
-
-    // --- State Listeners ---
-    document.getElementById('location-select').value = state.location;
-    document.getElementById('location-select').addEventListener('change', (e) => {
-      state.location = e.target.value;
-      localStorage.setItem('weather_loc', state.location);
-      fetchDashboardData();
-      fetchHistoryData();
-      fetchMapData();
-    });
-
-    const updateUnitUI = () => {
-      const btnC = document.getElementById('unit-c');
-      const btnF = document.getElementById('unit-f');
-      if (state.unit === 'C') {
-        btnC.className = "px-3 py-1 rounded-full text-sm font-bold transition-all text-white bg-white/20";
-        btnF.className = "px-3 py-1 rounded-full text-sm font-bold transition-all text-white/50 hover:text-white";
-      } else {
-        btnF.className = "px-3 py-1 rounded-full text-sm font-bold transition-all text-white bg-white/20";
-        btnC.className = "px-3 py-1 rounded-full text-sm font-bold transition-all text-white/50 hover:text-white";
-      }
-    };
-
-    document.getElementById('unit-c').addEventListener('click', () => {
-      state.unit = 'C'; localStorage.setItem('weather_unit', 'C'); updateUnitUI(); fetchDashboardData(true); fetchHistoryData();
-    });
-    document.getElementById('unit-f').addEventListener('click', () => {
-      state.unit = 'F'; localStorage.setItem('weather_unit', 'F'); updateUnitUI(); fetchDashboardData(true); fetchHistoryData();
-    });
-    updateUnitUI();
-
-    // --- Data Fetching & UI Updaters ---
-    
-    // 1. Dashboard Update
-    const fetchDashboardData = async (silent = false) => {
-      if (!silent) document.getElementById('loader').classList.remove('opacity-0', 'pointer-events-none');
-      
+    // Main Fetch Logic
+    async function fetchWeather() {
       try {
-        // Now targeting v2 root API exclusively as requested.
-        const res = await fetch(API_BASE);
-        if (!res.ok) throw new Error(`v2 API returned ${res.status}`);
-        
-        const data = await res.json();
-        
-        // Handle payload gracefully
-        const locData = data.locations ? data.locations[state.location] : data.weather;
-        if (!locData) throw new Error('Location data missing from payload');
-        
-        const curr = locData.current;
+        document.getElementById('loading').classList.remove('hidden');
+        const res = await fetch('https://api.upperhaughweather.uk/weather');
+        if (!res.ok) throw new Error("Failed to fetch weather data");
+        const {
+          weather,
+          airPollution
+        } = await res.json();
+        const curr = weather.current;
 
-        // Date
+        // Update Date
         const today = new Date();
-        document.getElementById('current-date').innerText = today.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const options = {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        };
+        document.getElementById('current-date').textContent = today.toLocaleDateString(undefined, options);
 
-        // Header Metrics
-        document.getElementById('current-temp').innerText = `${convertTemp(curr.temp)}°`;
-        document.getElementById('feels-like').innerText = `Feels like ${convertTemp(curr.feels_like)}°`;
-        document.getElementById('weather-desc').innerText = curr.weather[0].description;
-        
-        const iconName = mapIconCodeToLucide(curr.weather[0].id, curr.weather[0].icon);
-        document.getElementById('current-icon-container').innerHTML = `<i data-lucide="${iconName}" class="w-16 h-16 sm:w-20 sm:h-20 drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]"></i>`;
+        // Update Current Weather
+        document.getElementById('current-temp').textContent = Math.round(curr.temp) + '°C';
+        document.getElementById('weather-description').textContent = curr.weather[0].description;
+        document.getElementById('feels-like').textContent = 'Feels like: ' + Math.round(curr.feels_like) + '°C';
 
-        // Detailed Metrics
-        document.getElementById('precip-val').innerHTML = `${curr.rain?.['1h'] || 0} <span class="text-sm font-normal">mm</span>`;
-        document.getElementById('precip-chance').innerText = `${Math.round((locData.hourly[0]?.pop || 0) * 100)}% chance`;
-        
-        document.getElementById('wind-val').innerHTML = `${Math.round(curr.wind_speed * 2.237)} <span class="text-sm font-normal">mph</span>`;
-        document.getElementById('wind-dir').innerText = `Direction: ${getWindDirection(curr.wind_deg)}`;
+        // Weather Alerts
+        const weatherAlertsSection = document.getElementById('weather-alerts-section');
+        const weatherAlertsContent = document.getElementById('weather-alerts-content');
+        weatherAlertsContent.innerHTML = '';
 
-        document.getElementById('humidity-val').innerText = `${curr.humidity}%`;
-        document.getElementById('humidity-status').innerText = curr.humidity > 60 ? 'Humid' : (curr.humidity < 30 ? 'Dry' : 'Comfortable');
-        
-        document.getElementById('uv-val').innerText = curr.uvi.toFixed(1);
-        document.getElementById('uv-status').innerText = curr.uvi > 7 ? 'High' : (curr.uvi > 3 ? 'Moderate' : 'Low');
+        if (weather.alerts && weather.alerts.length > 0) {
+          weatherAlertsSection.classList.remove('hidden');
+          const alert = weather.alerts[0];
+          const level = alert.event.toLowerCase().includes('red') ? 'red' :
+            alert.event.toLowerCase().includes('amber') ? 'amber' : 'yellow';
+          const alertBox = document.createElement('div');
 
-        const visMiles = (curr.visibility / 1609.34).toFixed(1);
-        document.getElementById('visibility-val').innerHTML = `${visMiles} <span class="text-sm font-normal">mi</span>`;
-        document.getElementById('visibility-status').innerText = visMiles > 6 ? 'Clear' : 'Reduced';
+          // Using explicit styles for alert background to ensure contrast over the glass background
+          let bgColor = '';
+          let textColor = '';
+          if (level === 'red') {
+            bgColor = '#f87171';
+            textColor = '#991b1b';
+          } // Red Alert
+          else if (level === 'amber') {
+            bgColor = '#fde047';
+            textColor = '#713f12';
+          } // Amber Alert
+          else {
+            bgColor = '#a7f3d0';
+            textColor = '#065f46';
+          } // Yellow/Green Alert
 
-        document.getElementById('pressure-val').innerHTML = `${curr.pressure} <span class="text-sm font-normal">hPa</span>`;
-        document.getElementById('pressure-status').innerText = curr.pressure > 1020 ? 'High' : (curr.pressure < 1000 ? 'Low' : 'Normal');
+          alertBox.className = `rounded-xl p-4 shadow-xl transition-all duration-300`;
+          alertBox.style.backgroundColor = bgColor;
+          alertBox.style.color = textColor;
 
-        // Sun & Moon (Now unabbreviated)
-        document.getElementById('sunrise-val').innerText = formatTime(curr.sunrise);
-        document.getElementById('sunset-val').innerText = formatTime(curr.sunset);
-        document.getElementById('moon-val').innerText = getMoonPhase(locData.daily[0].moon_phase);
+          alertBox.innerHTML = `
+           <p class="font-extrabold text-lg">${alert.event}</p>
+           <p class="text-sm">${alert.description.split('.')[0]}.</p>
+           <a href="https://www.metoffice.gov.uk/weather/warnings-and-advice/uk-warnings" class="underline font-semibold text-xs mt-2 inline-block" style="color: ${textColor}; opacity: 0.9;">More info</a>
+         `;
+          weatherAlertsContent.appendChild(alertBox);
+        } else {
+          weatherAlertsSection.classList.add('hidden');
+        }
 
-        // Hourly with Sun Events Interleaved
-        const nowDt = Math.floor(Date.now() / 1000);
-        const hourlyItems = locData.hourly.slice(0, 24).map(h => ({
-          type: 'hourly',
-          dt: h.dt,
-          temp: h.temp,
-          pop: h.pop,
-          icon: h.weather[0].icon,
-          id: h.weather[0].id
-        }));
-        
-        const endDt = hourlyItems[hourlyItems.length - 1].dt;
-        
-        [0, 1].forEach(dayOffset => {
-           const day = locData.daily[dayOffset];
-           if (day) {
-             if (day.sunrise >= nowDt && day.sunrise <= endDt) {
-               hourlyItems.push({ type: 'sun', event: 'Sunrise', dt: day.sunrise, lucideIcon: 'sunrise' });
-             }
-             if (day.sunset >= nowDt && day.sunset <= endDt) {
-               hourlyItems.push({ type: 'sun', event: 'Sunset', dt: day.sunset, lucideIcon: 'sunset' });
-             }
-           }
+        // --- UPDATED Hourly Forecast ---
+        // Add summary text
+        const dailySummary = weather.daily[0] ?.summary || '';
+        document.getElementById('hourly-summary').textContent = dailySummary;
+
+        const hr = document.getElementById('hourly-forecast');
+        let hourlyHTML = '';
+        weather.hourly.slice(0, 25).forEach((h, i) => {
+          const timeObj = i === 0 ? {
+            time: 'Now',
+            ampm: ''
+          } : formatTime(h.dt);
+          const iconClass = h.weather[0].id < 600 ? 'fa-cloud-showers-heavy text-blue-400' :
+            h.weather[0].id < 700 ? 'fa-snowflake text-white' :
+            h.weather[0].id === 800 ? 'fa-sun text-yellow-500' : 'fa-cloud text-gray-400';
+          // Added description to the hourly forecast item
+          hourlyHTML += `
+           <div class="flex flex-col items-center min-w-[65px] p-2 rounded-lg hover:bg-white hover:bg-opacity-5 transition-colors">
+             <div class="hourly-time">
+               <span class="time">${timeObj.time}</span>
+               <span class="ampm">${timeObj.ampm}</span>
+             </div>
+             <span class="text-2xl mt-1"><i class="fa-solid ${iconClass}"></i></span>
+             <span class="font-medium mt-1">${Math.round(h.temp)}°C</span>
+              <span class="text-xs capitalize opacity-80">${h.weather[0].main}</span>
+             ${h.pop > 0.05 ? `<span class="text-xs text-blue-300 font-semibold">${Math.round(h.pop * 100)}%</span>` : '<span class="text-xs font-medium opacity-0">.</span>'}
+           </div>`;
         });
+        hr.innerHTML = hourlyHTML;
 
-        // Sort chronologically to insert sun events between hours
-        hourlyItems.sort((a, b) => a.dt - b.dt);
+        // Next Hour Precipitation
+        const ps = document.getElementById('precip-section');
+        const nextHourData = weather.hourly.slice(0, 12);
+        const totalPrecipNextHour = nextHourData.reduce((sum, h) => sum + (h.rain ?.['1h'] || h.snow ?.['1h'] || 0), 0);
 
-        const hourlyHtml = hourlyItems.map((item, i) => {
-          if (item.type === 'sun') {
-            const time = new Date(item.dt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            return `
-              <div class="flex flex-col items-center justify-center min-w-[85px] snap-center bg-orange-500/10 rounded-xl p-3 border border-orange-500/20">
-                <span class="text-sm text-orange-200/80 font-medium mb-1">${time}</span>
-                <i data-lucide="${item.lucideIcon}" class="w-8 h-8 text-orange-400 my-1 drop-shadow-md"></i>
-                <span class="text-sm font-semibold text-orange-200 mt-1">${item.event}</span>
-              </div>
-            `;
-          } else {
-            const isNow = locData.hourly[0] && locData.hourly[0].dt === item.dt; 
-            const timeStr = isNow ? 'Now' : new Date(item.dt * 1000).getHours() + ':00';
-            const icon = mapIconCodeToLucide(item.id, item.icon);
-            const pop = item.pop > 0 ? `<div class="text-xs text-blue-300 font-bold mt-1">${Math.round(item.pop*100)}%</div>` : '';
-            return `
-              <div class="flex flex-col items-center justify-center min-w-[80px] snap-center bg-white/5 rounded-xl p-3 border border-white/5">
-                <span class="text-sm text-white/80 font-medium mb-1">${timeStr}</span>
-                <i data-lucide="${icon}" class="w-8 h-8 text-white my-1 drop-shadow-md"></i>
-                <span class="text-lg font-semibold mt-1">${convertTemp(item.temp)}°</span>
-                ${pop}
-              </div>
-            `;
-          }
-        }).join('');
-        document.getElementById('hourly-forecast').innerHTML = hourlyHtml;
+        if (totalPrecipNextHour > 0.1) {
+          ps.classList.remove('hidden');
+          const precipData = weather.hourly.slice(0, 6);
+          const maxPrecip = Math.max(...precipData.map(h => h.rain ?.['1h'] || h.snow ?.['1h'] || 0));
 
-        // Daily (Updated Sizes)
-        const dailyHtml = locData.daily.slice(0, 8).map((d, i) => {
-          const dayName = i === 0 ? 'Today' : new Date(d.dt * 1000).toLocaleDateString(undefined, { weekday: 'short' });
-          const icon = mapIconCodeToLucide(d.weather[0].id, d.weather[0].icon);
-          const rain = d.rain ? `${Math.round(d.rain)}mm` : '--';
-          return `
-            <div class="flex justify-between items-center py-3 border-b border-white/5 last:border-0 hover:bg-white/5 px-3 rounded-lg transition-colors">
-              <div class="w-1/3 flex items-center gap-3">
-                <i data-lucide="${icon}" class="w-8 h-8 text-white/90"></i>
-                <span class="font-medium text-lg text-white">${dayName}</span>
-              </div>
-              <div class="w-1/3 text-center text-base text-blue-300 font-medium"><i data-lucide="droplets" class="w-5 h-5 inline pb-0.5"></i> ${Math.round(d.pop*100)}% <span class="text-white/70 text-sm sm:text-base ml-1">(${rain})</span></div>
-              <div class="w-1/3 text-right text-lg">
-                <span class="text-white/70 text-xl">${convertTemp(d.temp.min)}°</span>
-                <span class="mx-2 text-white/30 text-xl">|</span>
-                <span class="font-bold text-white text-2xl">${convertTemp(d.temp.max)}°</span>
-              </div>
-            </div>
-          `;
-        }).join('');
-        document.getElementById('daily-forecast').innerHTML = dailyHtml;
-
-        // Alerts processing
-        const alertsContainer = document.getElementById('alerts-container');
-        if (locData.alerts && locData.alerts.length > 0) {
-          alertsContainer.classList.remove('hidden');
-          alertsContainer.classList.add('flex');
-          alertsContainer.innerHTML = locData.alerts.map(alert => {
-             const ev = alert.event.toLowerCase();
-             let colorClasses = 'from-yellow-500/30 to-yellow-600/10 border-yellow-500/50 text-yellow-100';
-             let icon = 'alert-triangle';
-             
-             if (ev.includes('red')) { colorClasses = 'from-red-600/40 to-red-700/20 border-red-500/50 text-red-50'; icon = 'alert-octagon'; }
-             else if (ev.includes('amber') || ev.includes('orange')) { colorClasses = 'from-orange-500/40 to-orange-600/20 border-orange-500/50 text-orange-50'; }
-             
-             return `
-              <div class="w-full bg-gradient-to-r ${colorClasses} border rounded-xl p-4 backdrop-blur-md shadow-lg flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                <div class="flex items-start gap-3">
-                  <i data-lucide="${icon}" class="w-6 h-6 mt-1 flex-shrink-0"></i>
-                  <div>
-                    <h3 class="font-bold text-lg leading-tight mb-1">${alert.event}</h3>
-                    <p class="text-xs opacity-90 line-clamp-2">${alert.description}</p>
-                  </div>
-                </div>
-              </div>
-             `;
+          const bars = precipData.map(h => {
+            const val = (h.rain ?.['1h'] || h.snow ?.['1h'] || 0);
+            const height = maxPrecip > 0 ? Math.max(5, (val / maxPrecip) * 100) : 0; // Minimum height of 5% for visibility
+            return `<div class="bar" style="height:${height}%; background: ${val > 0.5 ? '#63b3ed' : '#90cdf4'};" title="${val.toFixed(1)}mm"></div>`;
           }).join('');
-        } else {
-          alertsContainer.classList.add('hidden');
-          alertsContainer.classList.remove('flex');
-        }
+          document.getElementById('precip-graph').innerHTML = bars;
 
-        // Initialize newly injected Lucide icons
-        lucide.createIcons();
-        
-      } catch (err) {
-        console.error("Dashboard Sync Error:", err);
-      } finally {
-        if (!silent) {
-           document.getElementById('loader').classList.add('opacity-0', 'pointer-events-none');
-        }
-      }
-    };
-
-    // 2. History Chart Fetch & Render
-    const fetchHistoryData = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/history/${state.location}?days=30`);
-        if (!res.ok) throw new Error('History API failed');
-        const json = await res.json();
-        
-        // Prepare arrays
-        const dates = [];
-        const maxTemps = [];
-        const minTemps = [];
-
-        json.history.forEach(dayRecord => {
-           const d = new Date(dayRecord.date);
-           dates.push(d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
-           maxTemps.push(convertTemp(dayRecord.weather.temp.max));
-           minTemps.push(convertTemp(dayRecord.weather.temp.min));
-        });
-
-        const ctx = document.getElementById('historyChart').getContext('2d');
-        const unitSymbol = state.unit === 'F' ? '°F' : '°C';
-        
-        // Destroy old if exists for recreation on unit change
-        if (historyChartInstance) {
-          historyChartInstance.destroy();
-        }
-
-        Chart.defaults.color = 'rgba(255, 255, 255, 0.7)';
-        Chart.defaults.font.family = 'Aptos, sans-serif';
-
-        historyChartInstance = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: dates,
-            datasets: [
-              {
-                label: `High (${unitSymbol})`,
-                data: maxTemps,
-                borderColor: '#ef4444', // Red-ish
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 2
-              },
-              {
-                label: `Low (${unitSymbol})`,
-                data: minTemps,
-                borderColor: '#3b82f6', // Blue-ish
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 2
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { position: 'top', labels: { boxWidth: 12 } },
-              tooltip: { mode: 'index', intersect: false }
-            },
-            scales: {
-              x: { grid: { color: 'rgba(255,255,255,0.05)' } },
-              y: { grid: { color: 'rgba(255,255,255,0.05)' } }
-            }
+          // Find the next significant precipitation event
+          const firstPrecip = weather.hourly.find(h => (h.rain ?.['1h'] || h.snow ?.['1h'] || 0) > 0.1);
+          if (firstPrecip) {
+            const timeObj = formatTime(firstPrecip.dt);
+            const precipType = firstPrecip.weather[0].main.toLowerCase();
+            document.getElementById('precip-info').textContent = `Expect light ${precipType} starting around ${timeObj.time}${timeObj.ampm}.`;
+          } else {
+            document.getElementById('precip-info').textContent = `Total precipitation expected in the next 12 hours: ${totalPrecipNextHour.toFixed(1)}mm.`;
           }
-        });
-      } catch (err) {
-        console.error("History Sync Error:", err);
-      }
-    };
 
-    // 3. Map Fetch & Render (Leaflet)
-    const fetchMapData = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/map/${state.location}`);
-        if (!res.ok) throw new Error('Map API failed');
-        const mapData = await res.json();
-        
-        const center = mapData.defaultCenter || [53.47, -1.36];
-        const zoom = mapData.defaultZoom || 11;
-        
-        // Initialize if not exists
-        if (!leafletMapInstance) {
-          leafletMapInstance = L.map('map', { 
-            zoomControl: false,
-            minZoom: 5, // Prevents "ZOOM NOT SUPPORTED" tiles from RainViewer
-            maxZoom: 14 // Prevents zooming in past radar coverage limits
-          }).setView(center, zoom);
-          L.control.zoom({ position: 'bottomright' }).addTo(leafletMapInstance);
-          
-          // Dark CartoDB basemap for better glassmorphism integration
-          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-             attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-          }).addTo(leafletMapInstance);
         } else {
-          leafletMapInstance.setView(center, zoom);
+          ps.classList.add('hidden');
         }
 
-        // Handle Radar Overlays
-        if (mapData.radarData && mapData.radarData.radar && mapData.radarData.radar.past) {
-          const pastFrames = mapData.radarData.radar.past;
-          if (pastFrames.length > 0) {
-            const latestFrame = pastFrames[pastFrames.length - 1]; // get most recent
-            const radarUrlTemplate = `${mapData.radarData.host}${latestFrame.path}/256/{z}/{x}/{y}/2/1_1.png`;
+        // --- UPDATED 10-Day Forecast ---
+        const dl = document.getElementById('daily-forecast');
+        let dailyHTML = '';
+        weather.daily.slice(0, 10).forEach((d, index) => {
+          const dt = new Date(d.dt * 1000);
+          const day = index === 0 ? 'Today' : dt.toLocaleDateString(undefined, {
+            weekday: 'short'
+          });
+          const dateNum = dt.getDate();
+          const pop = Math.round(d.pop * 100);
 
-            // Remove old layer if exists
-            if (radarLayer) leafletMapInstance.removeLayer(radarLayer);
-            
-            radarLayer = L.tileLayer(radarUrlTemplate, {
-              opacity: 0.8,
-              zIndex: 10,
-              attribution: 'RainViewer',
-              errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=' // Transparent fallback for missing tiles
-            }).addTo(leafletMapInstance);
+          const rawRainAmount = d.rain || 0;
+          const rainAmount = Math.round(rawRainAmount);
 
-            const timestamp = new Date(latestFrame.time * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            document.getElementById('map-time-label').innerText = `Radar Timestamp: ${timestamp}`;
-          }
+          const icon = d.weather[0].id < 600 ? 'fa-cloud-showers-heavy text-blue-400' :
+            d.weather[0].id < 700 ? 'fa-snowflake text-white' :
+            d.weather[0].id === 800 ? 'fa-sun text-yellow-500' : 'fa-cloud text-gray-400';
+          dailyHTML += `
+           <div class="flex justify-between items-center px-3 py-3 rounded-xl hover:bg-white hover:bg-opacity-10 transition-colors">
+             <div class="w-2/5 flex items-center gap-3 font-medium text-white">
+               <i class="fa-solid ${icon} text-lg"></i>
+               <span>${day} <span class="opacity-70 text-sm">(${dateNum})</span></span>
+             </div>
+             <div class="w-1/5 text-center text-md opacity-70">${Math.round(d.temp.min)}°</div>
+             <div class="w-1/5 text-center text-md font-semibold text-white">${Math.round(d.temp.max)}°</div>
+             <div class="w-1/5 text-right text-sm opacity-80">
+               ${rainAmount > 0 ? rainAmount + 'mm' : '--'} (${pop}%)
+             </div>
+           </div>`;
+        });
+        dl.innerHTML = dailyHTML;
+
+        // Details Cards (Precipitation, Humidity, Wind)
+        const rawCurrentRainAmount = curr.rain ?.['1h'] || curr.snow ?.['1h'] || 0;
+        let displayRainAmount;
+
+        if (rawCurrentRainAmount === 0) {
+          displayRainAmount = '0';
+        } else if (rawCurrentRainAmount > 0 && rawCurrentRainAmount < 1.0) {
+          displayRainAmount = '>0';
+        } else {
+          displayRainAmount = Math.round(rawCurrentRainAmount);
         }
 
-      } catch (err) {
-        console.error("Map Sync Error:", err);
+        document.getElementById('precip-now').textContent = `${displayRainAmount} mm`;
+        document.getElementById('precip-chance').textContent = `${Math.round(weather.hourly[0].pop * 100) || 0}% chance`;
+
+        const humidity = curr.humidity;
+        document.getElementById('humidity-value').textContent = `${humidity}%`;
+        let humidityStatus = 'Comfortable';
+        if (humidity < 30) {
+          humidityStatus = 'Dry';
+        } else if (humidity > 70) {
+          humidityStatus = 'Humid';
+        } else if (humidity > 60) {
+          humidityStatus = 'Muggy';
+        }
+        document.getElementById('humidity-status').textContent = humidityStatus;
+
+        document.getElementById('wind-speed').textContent = Math.round(curr.wind_speed * 2.237) + ' mph';
+        document.getElementById('wind-direction').textContent = `${windDegToCompass(curr.wind_deg)}`;
+
+        // Air Quality
+        if (airPollution && airPollution.list ?.length > 0) {
+          const aqi = airPollution.list[0].main.aqi;
+          document.getElementById('aq-value').textContent = `AQI: ${aqi}`;
+          const status = ['Good', 'Fair', 'Moderate', 'Poor', 'Very Poor'][aqi - 1] || '--';
+          document.getElementById('aq-status').textContent = status;
+          const bar = document.getElementById('aq-bar');
+          bar.style.width = (aqi * 20) + '%';
+          bar.style.backgroundColor = ['#4caf50', '#ffeb3b', '#ff9800', '#f44336', '#b71c1c'][aqi - 1] || 'gray';
+        } else {
+          document.getElementById('aq-status').textContent = 'N/A';
+          document.getElementById('aq-value').textContent = 'AQI: --';
+          document.getElementById('aq-bar').style.width = '0';
+        }
+
+        // UV Index
+        const uv = curr.uvi;
+        document.getElementById('uv-value').textContent = uv.toFixed(0);
+        const uvStatus = uv < 3 ? 'Low' : uv < 6 ? 'Moderate' : uv < 8 ? 'High' : uv < 11 ? 'Very High' : 'Extreme';
+        document.getElementById('uv-status').textContent = uvStatus;
+        const uvBar = document.getElementById('uv-bar');
+        uvBar.style.width = Math.min(100, uv * 8) + '%';
+        uvBar.style.backgroundColor = uv < 3 ? '#4caf50' : uv < 6 ? '#ffeb3b' : uv < 8 ? '#ff9800' : uv < 11 ? '#f44336' : '#b71c1c';
+        const uvAdvice = {
+          'Low': 'No protection needed.',
+          'Moderate': 'Seek shade during midday hours.',
+          'High': 'Wear sunscreen and protective clothing.',
+          'Very High': 'Reduce time in the sun between 10am-4pm.',
+          'Extreme': 'Avoid the sun during midday hours.'
+        };
+        document.getElementById('uv-advice').textContent = uvAdvice[uvStatus] || '';
+
+        // --- NEW Visibility Card ---
+        const visibilityMeters = curr.visibility;
+        const visibilityMiles = (visibilityMeters / 1609.34).toFixed(1);
+        document.getElementById('visibility-value').textContent = `${visibilityMiles} mi`;
+        let visibilityStatus = 'Moderate';
+        if (visibilityMiles > 6) {
+          visibilityStatus = 'Excellent';
+        } else if (visibilityMiles < 3) {
+          visibilityStatus = 'Poor';
+        }
+        document.getElementById('visibility-status').textContent = visibilityStatus;
+
+        // --- NEW Pressure Card ---
+        const pressure = curr.pressure;
+        document.getElementById('pressure-value').textContent = `${pressure} hPa`;
+        let pressureStatus = 'Normal';
+        if (pressure > 1022) {
+          pressureStatus = 'High';
+        } else if (pressure < 1000) {
+          pressureStatus = 'Low';
+        }
+        document.getElementById('pressure-status').textContent = pressureStatus;
+
+
+        // Sun & Moon
+        document.getElementById('sunrise').textContent = formatDate(weather.current.sunrise);
+        document.getElementById('sunset').textContent = formatDate(weather.current.sunset);
+        document.getElementById('moon-rise').textContent = formatDate(weather.daily[0].moonrise);
+        document.getElementById('moon-set').textContent = formatDate(weather.daily[0].moonset);
+        document.getElementById('moon-phase').textContent = moonPhaseText(weather.daily[0].moon_phase);
+
+        const moonPhaseValue = weather.daily[0] ?.moon_phase;
+        if (typeof moonPhaseValue === 'number') {
+          const illumination = (moonPhaseValue <= 0.5 ? moonPhaseValue * 2 : (1 - moonPhaseValue) * 2);
+          document.getElementById('moon-illum').textContent = `Illumination: ${(illumination * 100).toFixed(0)}%`;
+        } else {
+          document.getElementById('moon-illum').textContent = `Illumination: --%`;
+        }
+
+        // Hide loading and show app
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('weather-app').classList.remove('hidden');
+        document.getElementById('error').classList.add('hidden');
+      } catch (e) {
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('error').classList.remove('hidden');
+        document.getElementById('weather-app').classList.add('hidden');
+        console.error("Error fetching weather data:", e);
       }
-    };
+    }
 
-    // --- Boot & Background Sync ---
-    const initApp = () => {
-      lucide.createIcons();
-      fetchDashboardData(false);
-      fetchHistoryData();
-      fetchMapData();
-      
-      // Silent Background Refresh (Every 5 mins)
-      setInterval(() => {
-        fetchDashboardData(true); // true = silent (no loader overlay)
-        fetchMapData(); // Updates map tile paths silently
-      }, 5 * 60 * 1000);
-    };
+    // Initialization
+    window.onload = fetchWeather;
 
-    window.onload = initApp;
-
+    // Service Worker Registration
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js")
+        .then(() => console.log("Service Worker Registered"))
+        .catch(err => console.error("Service Worker failed to register:", err));
+    }
   </script>
 </body>
 </html>

@@ -1,0 +1,22 @@
+{
+  "name": "Upper Haugh Weather",
+  "description": "Local weather forecast for Upper Haugh",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#1e374d",
+  "theme_color": "#1e374d",
+  "icons": [
+    {
+      "src": "https://cdn-eu.fusedframe.co.uk/services/upperhaugh-weather-app/logos/squarefavicon-transparent.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn-eu.fusedframe.co.uk/services/upperhaugh-weather-app/logos/squarefavicon-transparent.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
