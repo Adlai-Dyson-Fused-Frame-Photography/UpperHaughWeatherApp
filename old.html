@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upper Haugh Weather</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Removed Inter font link -->
+  <meta name="theme-color" content="#1e374d">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="https://cdn-eu.fusedframe.co.uk/services/upperhaugh-weather-app/logos/squarefavicon-transparent.png">
+  <link rel="apple-touch-icon" href="https://cdn-eu.fusedframe.co.uk/services/upperhaugh-weather-app/logos/squarefavicon-transparent.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="UH Weather">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    /* --- Font Setup (Aptos) --- */
+    @font-face {
+      font-family: 'Aptos';
+      src: url('https://cdn-eu.fusedframe.co.uk/fonts/aptos/aptos-regular.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+    }
+
+    @font-face {
+      font-family: 'Aptos';
+      src: url('https://cdn-eu.fusedframe.co.uk/fonts/aptos/aptos-bold.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+    }
+
+    /* --- Color Variables (Modified for White body text) --- */
+    :root {
+      --bg: #111827;
+      --bg-end: #1e374d;
+      /* NEW: Gradient end color */
+      --general-text: #ffffff;
+      /* General body text color (White) */
+      --header-color: #94fdf8;
+      /* Accent color for titles/headers */
+      --card-bg: rgba(30, 55, 77, 0.5);
+      /* Slightly less opaque for better glass effect */
+      --border: rgba(148, 253, 248, 0.2);
+      /* Slightly lighter border */
+      --sec: #94fdf8;
+      /* Used for progress bars/accents */
+      --sec-light: rgba(148, 253, 248, 0.7);
+    }
+
+    body.amoled-mode {
+      --bg: #000;
+      --bg-end: #000;
+      /* NEW: Use pure black for the end color in AMOLED for maximum darkness */
+      --general-text: #ffffff;
+      --header-color: #ffffff;
+      /* Use white in AMOLED mode for contrast */
+      --card-bg: rgba(18, 18, 18, 0.75);
+      --border: rgba(255, 255, 255, 0.1);
+      --sec: #fff;
+      --sec-light: rgba(255, 255, 255, 0.8);
+    }
+
+    /* --- Base Styles (Updated Font and Color) --- */
+    body {
+      font-family: 'Aptos', sans-serif;
+      background-color: var(--bg);
+      color: var(--general-text);
+      /* Uses white/light text as base */
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      /* Fade transition for theme change: ADDED background-image for smoother visual gradient change */
+      transition: background-color 0.5s ease, color 0.5s ease, background-image 0.5s ease;
+      /* Subtle background gradient for depth - NOW uses the new --bg-end variable */
+      background-image: linear-gradient(135deg, var(--bg) 0%, var(--bg-end) 100%);
+    }
+
+    .weather-card {
+      /* --- Glassmorphism Effect --- */
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 1.5rem;
+      /* More rounded corners */
+      padding: 1.5rem;
+      /* Increased padding */
+      margin-bottom: 1.5rem;
+      /* Increased spacing */
+      backdrop-filter: blur(18px);
+      /* Frosted Glass */
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      /* Lifted shadow */
+      transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.5s ease;
+      /* Added background transition */
+    }
+
+    .weather-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+    }
+
+    /* Apply header color to all card titles */
+    .weather-card h2 {
+      color: var(--header-color);
+      transition: color 0.5s ease;
+    }
+
+    /* --- Scrollable Content --- */
+    .scrollable-x {
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .scrollable-x::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* --- Progress Bars (Modernized) --- */
+    .progress-bar-container {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      /* Lighter track */
+      border-radius: 9999px;
+      height: 8px;
+      /* Thinner */
+      margin-top: 0.75rem;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: var(--sec);
+      border-radius: 9999px;
+      box-shadow: 0 0 8px var(--sec-light);
+      /* Subtle glow on the bar */
+      transition: width 1s ease-out, background 0.5s;
+    }
+
+    /* --- Loading Spinner --- */
+    .loading-spinner {
+      border: 4px solid rgba(148, 253, 248, 0.3);
+      border-top: 4px solid var(--sec);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* --- Hourly Forecast Styles --- */
+    .hourly-time {
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      align-items: baseline;
+      font-size: 0.9rem;
+    }
+
+    .hourly-time .time {
+      font-weight: 700;
+      color: var(--sec);
+    }
+
+    .hourly-time .ampm {
+      font-size: 0.75rem;
+      color: var(--sec-light);
+    }
+
+    .bar {
+      width: 4px;
+      /* Slightly thicker */
+      margin: 0 2px;
+      background: #63b3ed;
+      /* Keep rain color consistent */
+      display: inline-block;
+      border-radius: 3px;
+      transition: height 0.3s ease-out;
+    }
+
+    /* --- Call-to-action Links (Modernized) --- */
+    .cta-link-section a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 280px;
+      /* Standardized width */
+      background-color: var(--sec);
+      color: var(--bg);
+      /* Inverted text for high contrast */
+      font-weight: 700;
+      padding: 0.75rem 1.5rem;
+      border-radius: 1rem;
+      font-size: 1rem;
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+      box-shadow: 0 4px 15px rgba(148, 253, 248, 0.2);
+    }
+
+    .cta-link-section a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(148, 253, 248, 0.4);
+      opacity: 0.9;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Loading State -->
+  <div id="loading" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 transition-opacity duration-500">
+    <div class="loading-spinner"></div>
+  </div>
+  <div id="error" class="hidden text-red-400 text-center p-4 font-bold transition-opacity duration-500">
+    <i class="fa-solid fa-triangle-exclamation mr-2"></i>Unable to load weather data. Please check the API status.
+  </div>
+
+  <!-- Main Weather App Content -->
+  <main id="weather-app" class="hidden p-4 w-full max-w-5xl mx-auto relative">
+
+    <!-- Theme Toggle (Positioned top right) -->
+    <div class="absolute top-4 right-4 md:top-8 md:right-8 z-10">
+      <button id="amoled-toggle" class="bg-gray-700 text-white p-3 rounded-full hover:bg-gray-600 transition duration-300 shadow-lg" title="Toggle Dark/AMOLED Mode">
+        <i id="theme-icon" class="fa-regular fa-moon text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Date, Divider, and Location Title (Centered and Enlarged) -->
+    <div class="text-center py-2 mb-6 transition-all duration-500">
+      <p id="current-date" class="text-base font-semibold text-white opacity-80 mb-2 transition-all duration-500"></p>
+      <div class="w-24 mx-auto border-t border-white border-opacity-10 mb-4 transition-all duration-500"></div>
+      <h1 id="location" class="text-4xl sm:text-5xl font-extrabold" style="color: var(--header-color); transition: color 0.5s ease;">Upper Haugh</h1>
+    </div>
+
+    <!-- Current Weather Overview -->
+    <section class="text-center mb-8">
+      <p id="current-temp" class="text-7xl font-light my-2 leading-none text-white transition-all duration-500">--°C</p>
+      <p id="weather-description" class="text-2xl capitalize font-medium text-white opacity-90 transition-all duration-500">...</p>
+      <p id="feels-like" class="text-lg opacity-70 mt-1 transition-all duration-500">Feels like: --°C</p>
+    </section>
+
+    <!-- Main content grid -->
+    <div class="flex flex-col md:flex-row md:gap-5 md:items-stretch">
+      <!-- Left Column (Hourly & Daily Forecasts) -->
+      <div class="md:w-1/2 md:flex md:flex-col">
+        <!-- Hourly Forecast Card -->
+        <section class="weather-card">
+          <h2 class="text-xl font-semibold flex items-center mb-2">
+            <i class="fa-solid fa-hourglass-start mr-3 opacity-80"></i>Hourly Forecast
+          </h2>
+          <!-- Hourly summary description added here -->
+          <p id="hourly-summary" class="text-sm opacity-80 mb-2 border-b border-white border-opacity-10 pb-2"></p>
+          <div id="hourly-forecast" class="flex scrollable-x space-x-4 py-2"></div>
+        </section>
+
+        <!-- 10-Day Forecast Card -->
+        <section class="weather-card flex-grow">
+          <h2 class="text-xl font-semibold flex items-center mb-4">
+            <i class="fa-solid fa-calendar-days mr-3 opacity-80"></i>8 Day Forecast
+          </h2>
+          <div class="flex justify-between text-sm opacity-70 mb-2 px-3 border-b border-opacity-30 border-current pb-1">
+            <span class="w-2/5">Day</span>
+            <span class="w-1/5 text-center">Low</span>
+            <span class="w-1/5 text-center">High</span>
+            <span class="w-1/5 text-right">Rain (<i class="fa-solid fa-droplet"></i>)</span>
+          </div>
+          <div id="daily-forecast" class="flex flex-col space-y-1"></div>
+        </section>
+      </div>
+
+      <!-- Right Column (Details) - Added md:justify-between for alignment -->
+      <div class="md:w-1/2 md:flex md:flex-col md:justify-between">
+        <div class="w-full"> <!-- Wrapper for top aligned cards -->
+            <!-- Weather Alerts Card -->
+            <section id="weather-alerts-section" class="weather-card hidden">
+              <h2 class="text-xl font-semibold flex items-center mb-2 text-yellow-300" style="color: var(--header-color);">
+                <i class="fa-solid fa-bell mr-3"></i>Weather Alerts
+              </h2>
+              <div id="weather-alerts-content"></div>
+            </section>
+
+            <!-- Precipitation Card -->
+            <section class="weather-card flex flex-row justify-between items-center">
+              <h2 class="text-lg font-semibold flex items-center opacity-90"><i class="fa-solid fa-cloud-rain mr-3"></i>Precipitation</h2>
+              <div class="text-right">
+                <p id="precip-now" class="text-xl font-medium text-white">-- mm</p>
+                <p id="precip-chance" class="text-sm opacity-70">--% chance</p>
+              </div>
+            </section>
+
+            <!-- Humidity Card -->
+            <section class="weather-card flex flex-row justify-between items-center">
+              <h2 class="text-lg font-semibold flex items-center opacity-90"><i class="fa-solid fa-droplet mr-3"></i>Humidity</h2>
+              <div class="text-right">
+                <p id="humidity-value" class="text-xl font-medium text-white">--%</p>
+                <p id="humidity-status" class="text-sm opacity-70">--</p>
+              </div>
+            </section>
+
+            <!-- Wind Card -->
+            <section class="weather-card flex flex-row justify-between items-center">
+              <h2 class="text-lg font-semibold flex items-center opacity-90"><i class="fa-solid fa-wind mr-3"></i>Wind</h2>
+              <div class="text-right">
+                <p id="wind-speed" class="text-xl font-medium text-white">-- mph</p>
+                <p id="wind-direction" class="text-sm opacity-70">--</p>
+              </div>
+            </section>
+        </div>
+
+        <div class="w-full"> <!-- Wrapper for bottom aligned cards -->
+            <!-- Air Quality Card (Centered) -->
+            <section class="weather-card">
+              <h2 class="text-xl font-semibold flex items-center justify-center mb-2"><i class="fa-solid fa-smog mr-3"></i>Air Quality</h2>
+              <div class="text-center">
+                <p id="aq-status" class="text-xl font-medium text-white">--</p>
+                <p id="aq-value" class="text-sm opacity-70">AQI: --</p>
+              </div>
+              <div class="progress-bar-container">
+                <div id="aq-bar" class="progress-bar"></div>
+              </div>
+            </section>
+
+            <!-- UV Index Card (Centered) -->
+            <section class="weather-card">
+              <h2 class="text-xl font-semibold flex items-center justify-center mb-2"><i class="fa-solid fa-sun mr-3"></i>UV Index</h2>
+              <div class="text-center">
+                <p id="uv-value" class="text-xl font-medium text-white">--</p>
+                <p id="uv-status" class="text-sm opacity-70">--</p>
+              </div>
+              <div class="progress-bar-container">
+                <div id="uv-bar" class="progress-bar"></div>
+              </div>
+              <p id="uv-advice" class="text-xs opacity-70 mt-3 text-center italic"></p>
+            </section>
+
+            <!-- Visibility Card - NEW -->
+            <section class="weather-card">
+              <h2 class="text-xl font-semibold flex items-center justify-center mb-2"><i class="fa-solid fa-eye mr-3"></i>Visibility</h2>
+              <div class="text-center">
+                <p id="visibility-value" class="text-xl font-medium text-white">-- mi</p>
+                <p id="visibility-status" class="text-sm opacity-70">--</p>
+              </div>
+            </section>
+
+            <!-- Pressure Card - NEW -->
+            <section class="weather-card">
+              <h2 class="text-xl font-semibold flex items-center justify-center mb-2"><i class="fa-solid fa-gauge-high mr-3"></i>Pressure</h2>
+              <div class="text-center">
+                <p id="pressure-value" class="text-xl font-medium text-white">-- hPa</p>
+                <p id="pressure-status" class="text-sm opacity-70">--</p>
+              </div>
+            </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- Next Hour Precipitation Graph -->
+    <section id="precip-section" class="weather-card hidden">
+      <h2 class="text-xl font-semibold flex items-center mb-4">
+        <i class="fa-solid fa-cloud-showers-heavy mr-3 opacity-80"></i>Next Hour Precipitation
+      </h2>
+      <div id="precip-graph" class="w-full h-24 flex items-end justify-center rounded-lg overflow-hidden bg-gray-900 bg-opacity-20 p-2"></div>
+      <p id="precip-info" class="text-sm opacity-70 mt-4 text-center"></p>
+    </section>
+
+    <!-- Sun & Moon Card -->
+    <section class="weather-card">
+      <h2 class="text-xl font-semibold flex items-center mb-4"><i class="fa-solid fa-sun-plant-wilt mr-3 opacity-80"></i>Sun & Moon</h2>
+      <div class="flex flex-col space-y-4">
+        <!-- Sunrise/Sunset -->
+        <div class="flex justify-around items-center">
+          <div class="text-center">
+            <h3 class="text-lg font-medium opacity-90">Sunrise</h3>
+            <p id="sunrise" class="opacity-70">--</p>
+          </div>
+          <div class="text-center">
+            <h3 class="text-lg font-medium opacity-90">Sunset</h3>
+            <p id="sunset" class="opacity-70">--</p>
+          </div>
+        </div>
+        <hr class="border-current opacity-20 my-2" />
+        <!-- Moonrise/Moonset/Phase -->
+        <div class="flex flex-wrap justify-around items-start">
+          <div class="text-center w-1/3 min-w-[120px] mb-2">
+            <h3 class="text-lg font-medium opacity-90">Moonrise</h3>
+            <p id="moon-rise" class="opacity-70">--</p>
+          </div>
+          <div class="text-center w-1/3 min-w-[120px] mb-2">
+            <h3 class="text-lg font-medium opacity-90">Moonset</h3>
+            <p id="moon-set" class="opacity-70">--</p>
+          </div>
+          <div class="text-center w-full mt-4">
+            <h3 class="text-lg font-medium opacity-90">Moon Phase</h3>
+            <p id="moon-phase" class="opacity-70">--</p>
+            <p id="moon-illum" class="text-sm opacity-50">--%</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Call to Action Links - UPDATED -->
+    <section class="mt-8 flex flex-col md:flex-row items-center justify-center md:space-x-4 space-y-4 md:space-y-0 text-center cta-link-section">
+      <a href="https://adffp.uk/uhwapptools" title="Learn more about the technology used">
+        Learn more about this tool
+      </a>
+      <a href="https://adffp.uk/uhwappgithub" title="View the source code on GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 mr-2">
+          <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-1.8c-3.2.7-3.8-1.5-3.8-1.5-.5-1.2-1.2-1.5-1.2-1.5-1-.7.1-.7.1-.7 1.1.1 1.7 1.1 1.7 1.1.9.1 1.7-.8 1.7-.8.3-1.1.8-1.4 1.2-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2 1-.3 2.1-.5 3.1-.5s2.1.2 3.1.5c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.3.8 1 .8 2v3c0 .3.2.6.8.5C20.7 21.4 24 17.1 24 12c0-6.35-5.15-11.5-12-11.5z" />
+        </svg>
+        View on GitHub
+      </a>
+    </section>
+
+    <!-- Footer Logo and Info -->
+    <section class="text-center mt-10 mb-4">
+      <img src="https://cdn-eu.fusedframe.co.uk/services/upperhaugh-weather-app/logos/bannerlogo-transparent.png" alt="Upper Haugh Weather Logo" class="mx-auto max-w-xs w-full h-auto opacity-80" />
+    </section>
+
+    <footer class="text-center text-sm p-4 opacity-60">
+      <p class="font-bold">Upper Haugh Weather</p>
+      <p class="text-xs mt-1">
+        Data from Open Weather Map (
+        <a href="https://api.upperhaughweather.uk/weather" class="underline hover:opacity-100 transition" target="_blank">api.upperhaughweather.uk/weather</a>)
+      </p>
+      <p class="mt-2">
+        <a href="https://adlaidyson.co.uk" class="underline hover:opacity-100 transition" target="_blank">Made by Adlai Dyson | Fused Frame Photography</a>
+      </p>
+    </footer>
+  </main>
+  <script>
+    // Global functions for theme and formatting
+    const toggle = document.getElementById('amoled-toggle'),
+      icon = document.getElementById('theme-icon');
+
+    function setTheme(val) {
+      document.body.classList.toggle('amoled-mode', val);
+      icon.classList.toggle('fa-sun', val);
+      icon.classList.toggle('fa-moon', !val);
+      localStorage.setItem('amoled', val);
+    }
+    toggle.addEventListener('click', () => {
+      setTheme(!document.body.classList.contains('amoled-mode'));
+    });
+    setTheme(localStorage.getItem('amoled') === 'true');
+
+    function formatTime(ts) {
+      const d = new Date(ts * 1000),
+        h = ((d.getHours() + 11) % 12) + 1,
+        m = d.getMinutes(),
+        a = d.getHours() >= 12 ? 'PM' : 'AM';
+      return {
+        time: `${h}:${m.toString().padStart(2, '0')}`,
+        ampm: a
+      };
+    }
+
+    function windDegToCompass(num) {
+      const val = Math.floor((num / 22.5) + 0.5);
+      const arr = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
+        'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'
+      ];
+      return arr[(val % 16)];
+    }
+
+    function formatDate(ts) {
+      if (!ts) return '--';
+      const d = new Date(ts * 1000);
+      return d.toLocaleTimeString(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+
+    function moonPhaseText(phase) {
+      if (phase === undefined) return '--';
+      if (phase === 0 || phase === 1) return 'New Moon';
+      if (phase < 0.25) return 'Waxing Crescent';
+      if (phase === 0.25) return 'First Quarter';
+      if (phase < 0.5) return 'Waxing Gibbous';
+      if (phase === 0.5) return 'Full Moon';
+      if (phase < 0.75) return 'Waning Gibbous';
+      if (phase === 0.75) return 'Last Quarter';
+      if (phase < 1) return 'Waning Crescent';
+      return '--';
+    }
+
+    // Main Fetch Logic
+    async function fetchWeather() {
+      try {
+        document.getElementById('loading').classList.remove('hidden');
+        const res = await fetch('https://api.upperhaughweather.uk/weather');
+        if (!res.ok) throw new Error("Failed to fetch weather data");
+        const {
+          weather,
+          airPollution
+        } = await res.json();
+        const curr = weather.current;
+
+        // Update Date
+        const today = new Date();
+        const options = {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        };
+        document.getElementById('current-date').textContent = today.toLocaleDateString(undefined, options);
+
+        // Update Current Weather
+        document.getElementById('current-temp').textContent = Math.round(curr.temp) + '°C';
+        document.getElementById('weather-description').textContent = curr.weather[0].description;
+        document.getElementById('feels-like').textContent = 'Feels like: ' + Math.round(curr.feels_like) + '°C';
+
+        // Weather Alerts
+        const weatherAlertsSection = document.getElementById('weather-alerts-section');
+        const weatherAlertsContent = document.getElementById('weather-alerts-content');
+        weatherAlertsContent.innerHTML = '';
+
+        if (weather.alerts && weather.alerts.length > 0) {
+          weatherAlertsSection.classList.remove('hidden');
+          const alert = weather.alerts[0];
+          const level = alert.event.toLowerCase().includes('red') ? 'red' :
+            alert.event.toLowerCase().includes('amber') ? 'amber' : 'yellow';
+          const alertBox = document.createElement('div');
+
+          // Using explicit styles for alert background to ensure contrast over the glass background
+          let bgColor = '';
+          let textColor = '';
+          if (level === 'red') {
+            bgColor = '#f87171';
+            textColor = '#991b1b';
+          } // Red Alert
+          else if (level === 'amber') {
+            bgColor = '#fde047';
+            textColor = '#713f12';
+          } // Amber Alert
+          else {
+            bgColor = '#a7f3d0';
+            textColor = '#065f46';
+          } // Yellow/Green Alert
+
+          alertBox.className = `rounded-xl p-4 shadow-xl transition-all duration-300`;
+          alertBox.style.backgroundColor = bgColor;
+          alertBox.style.color = textColor;
+
+          alertBox.innerHTML = `
+           <p class="font-extrabold text-lg">${alert.event}</p>
+           <p class="text-sm">${alert.description.split('.')[0]}.</p>
+           <a href="https://www.metoffice.gov.uk/weather/warnings-and-advice/uk-warnings" class="underline font-semibold text-xs mt-2 inline-block" style="color: ${textColor}; opacity: 0.9;">More info</a>
+         `;
+          weatherAlertsContent.appendChild(alertBox);
+        } else {
+          weatherAlertsSection.classList.add('hidden');
+        }
+
+        // --- UPDATED Hourly Forecast ---
+        // Add summary text
+        const dailySummary = weather.daily[0] ?.summary || '';
+        document.getElementById('hourly-summary').textContent = dailySummary;
+
+        const hr = document.getElementById('hourly-forecast');
+        let hourlyHTML = '';
+        weather.hourly.slice(0, 25).forEach((h, i) => {
+          const timeObj = i === 0 ? {
+            time: 'Now',
+            ampm: ''
+          } : formatTime(h.dt);
+          const iconClass = h.weather[0].id < 600 ? 'fa-cloud-showers-heavy text-blue-400' :
+            h.weather[0].id < 700 ? 'fa-snowflake text-white' :
+            h.weather[0].id === 800 ? 'fa-sun text-yellow-500' : 'fa-cloud text-gray-400';
+          // Added description to the hourly forecast item
+          hourlyHTML += `
+           <div class="flex flex-col items-center min-w-[65px] p-2 rounded-lg hover:bg-white hover:bg-opacity-5 transition-colors">
+             <div class="hourly-time">
+               <span class="time">${timeObj.time}</span>
+               <span class="ampm">${timeObj.ampm}</span>
+             </div>
+             <span class="text-2xl mt-1"><i class="fa-solid ${iconClass}"></i></span>
+             <span class="font-medium mt-1">${Math.round(h.temp)}°C</span>
+              <span class="text-xs capitalize opacity-80">${h.weather[0].main}</span>
+             ${h.pop > 0.05 ? `<span class="text-xs text-blue-300 font-semibold">${Math.round(h.pop * 100)}%</span>` : '<span class="text-xs font-medium opacity-0">.</span>'}
+           </div>`;
+        });
+        hr.innerHTML = hourlyHTML;
+
+        // Next Hour Precipitation
+        const ps = document.getElementById('precip-section');
+        const nextHourData = weather.hourly.slice(0, 12);
+        const totalPrecipNextHour = nextHourData.reduce((sum, h) => sum + (h.rain ?.['1h'] || h.snow ?.['1h'] || 0), 0);
+
+        if (totalPrecipNextHour > 0.1) {
+          ps.classList.remove('hidden');
+          const precipData = weather.hourly.slice(0, 6);
+          const maxPrecip = Math.max(...precipData.map(h => h.rain ?.['1h'] || h.snow ?.['1h'] || 0));
+
+          const bars = precipData.map(h => {
+            const val = (h.rain ?.['1h'] || h.snow ?.['1h'] || 0);
+            const height = maxPrecip > 0 ? Math.max(5, (val / maxPrecip) * 100) : 0; // Minimum height of 5% for visibility
+            return `<div class="bar" style="height:${height}%; background: ${val > 0.5 ? '#63b3ed' : '#90cdf4'};" title="${val.toFixed(1)}mm"></div>`;
+          }).join('');
+          document.getElementById('precip-graph').innerHTML = bars;
+
+          // Find the next significant precipitation event
+          const firstPrecip = weather.hourly.find(h => (h.rain ?.['1h'] || h.snow ?.['1h'] || 0) > 0.1);
+          if (firstPrecip) {
+            const timeObj = formatTime(firstPrecip.dt);
+            const precipType = firstPrecip.weather[0].main.toLowerCase();
+            document.getElementById('precip-info').textContent = `Expect light ${precipType} starting around ${timeObj.time}${timeObj.ampm}.`;
+          } else {
+            document.getElementById('precip-info').textContent = `Total precipitation expected in the next 12 hours: ${totalPrecipNextHour.toFixed(1)}mm.`;
+          }
+
+        } else {
+          ps.classList.add('hidden');
+        }
+
+        // --- UPDATED 10-Day Forecast ---
+        const dl = document.getElementById('daily-forecast');
+        let dailyHTML = '';
+        weather.daily.slice(0, 10).forEach((d, index) => {
+          const dt = new Date(d.dt * 1000);
+          const day = index === 0 ? 'Today' : dt.toLocaleDateString(undefined, {
+            weekday: 'short'
+          });
+          const dateNum = dt.getDate();
+          const pop = Math.round(d.pop * 100);
+
+          const rawRainAmount = d.rain || 0;
+          const rainAmount = Math.round(rawRainAmount);
+
+          const icon = d.weather[0].id < 600 ? 'fa-cloud-showers-heavy text-blue-400' :
+            d.weather[0].id < 700 ? 'fa-snowflake text-white' :
+            d.weather[0].id === 800 ? 'fa-sun text-yellow-500' : 'fa-cloud text-gray-400';
+          dailyHTML += `
+           <div class="flex justify-between items-center px-3 py-3 rounded-xl hover:bg-white hover:bg-opacity-10 transition-colors">
+             <div class="w-2/5 flex items-center gap-3 font-medium text-white">
+               <i class="fa-solid ${icon} text-lg"></i>
+               <span>${day} <span class="opacity-70 text-sm">(${dateNum})</span></span>
+             </div>
+             <div class="w-1/5 text-center text-md opacity-70">${Math.round(d.temp.min)}°</div>
+             <div class="w-1/5 text-center text-md font-semibold text-white">${Math.round(d.temp.max)}°</div>
+             <div class="w-1/5 text-right text-sm opacity-80">
+               ${rainAmount > 0 ? rainAmount + 'mm' : '--'} (${pop}%)
+             </div>
+           </div>`;
+        });
+        dl.innerHTML = dailyHTML;
+
+        // Details Cards (Precipitation, Humidity, Wind)
+        const rawCurrentRainAmount = curr.rain ?.['1h'] || curr.snow ?.['1h'] || 0;
+        let displayRainAmount;
+
+        if (rawCurrentRainAmount === 0) {
+          displayRainAmount = '0';
+        } else if (rawCurrentRainAmount > 0 && rawCurrentRainAmount < 1.0) {
+          displayRainAmount = '>0';
+        } else {
+          displayRainAmount = Math.round(rawCurrentRainAmount);
+        }
+
+        document.getElementById('precip-now').textContent = `${displayRainAmount} mm`;
+        document.getElementById('precip-chance').textContent = `${Math.round(weather.hourly[0].pop * 100) || 0}% chance`;
+
+        const humidity = curr.humidity;
+        document.getElementById('humidity-value').textContent = `${humidity}%`;
+        let humidityStatus = 'Comfortable';
+        if (humidity < 30) {
+          humidityStatus = 'Dry';
+        } else if (humidity > 70) {
+          humidityStatus = 'Humid';
+        } else if (humidity > 60) {
+          humidityStatus = 'Muggy';
+        }
+        document.getElementById('humidity-status').textContent = humidityStatus;
+
+        document.getElementById('wind-speed').textContent = Math.round(curr.wind_speed * 2.237) + ' mph';
+        document.getElementById('wind-direction').textContent = `${windDegToCompass(curr.wind_deg)}`;
+
+        // Air Quality
+        if (airPollution && airPollution.list ?.length > 0) {
+          const aqi = airPollution.list[0].main.aqi;
+          document.getElementById('aq-value').textContent = `AQI: ${aqi}`;
+          const status = ['Good', 'Fair', 'Moderate', 'Poor', 'Very Poor'][aqi - 1] || '--';
+          document.getElementById('aq-status').textContent = status;
+          const bar = document.getElementById('aq-bar');
+          bar.style.width = (aqi * 20) + '%';
+          bar.style.backgroundColor = ['#4caf50', '#ffeb3b', '#ff9800', '#f44336', '#b71c1c'][aqi - 1] || 'gray';
+        } else {
+          document.getElementById('aq-status').textContent = 'N/A';
+          document.getElementById('aq-value').textContent = 'AQI: --';
+          document.getElementById('aq-bar').style.width = '0';
+        }
+
+        // UV Index
+        const uv = curr.uvi;
+        document.getElementById('uv-value').textContent = uv.toFixed(0);
+        const uvStatus = uv < 3 ? 'Low' : uv < 6 ? 'Moderate' : uv < 8 ? 'High' : uv < 11 ? 'Very High' : 'Extreme';
+        document.getElementById('uv-status').textContent = uvStatus;
+        const uvBar = document.getElementById('uv-bar');
+        uvBar.style.width = Math.min(100, uv * 8) + '%';
+        uvBar.style.backgroundColor = uv < 3 ? '#4caf50' : uv < 6 ? '#ffeb3b' : uv < 8 ? '#ff9800' : uv < 11 ? '#f44336' : '#b71c1c';
+        const uvAdvice = {
+          'Low': 'No protection needed.',
+          'Moderate': 'Seek shade during midday hours.',
+          'High': 'Wear sunscreen and protective clothing.',
+          'Very High': 'Reduce time in the sun between 10am-4pm.',
+          'Extreme': 'Avoid the sun during midday hours.'
+        };
+        document.getElementById('uv-advice').textContent = uvAdvice[uvStatus] || '';
+
+        // --- NEW Visibility Card ---
+        const visibilityMeters = curr.visibility;
+        const visibilityMiles = (visibilityMeters / 1609.34).toFixed(1);
+        document.getElementById('visibility-value').textContent = `${visibilityMiles} mi`;
+        let visibilityStatus = 'Moderate';
+        if (visibilityMiles > 6) {
+          visibilityStatus = 'Excellent';
+        } else if (visibilityMiles < 3) {
+          visibilityStatus = 'Poor';
+        }
+        document.getElementById('visibility-status').textContent = visibilityStatus;
+
+        // --- NEW Pressure Card ---
+        const pressure = curr.pressure;
+        document.getElementById('pressure-value').textContent = `${pressure} hPa`;
+        let pressureStatus = 'Normal';
+        if (pressure > 1022) {
+          pressureStatus = 'High';
+        } else if (pressure < 1000) {
+          pressureStatus = 'Low';
+        }
+        document.getElementById('pressure-status').textContent = pressureStatus;
+
+
+        // Sun & Moon
+        document.getElementById('sunrise').textContent = formatDate(weather.current.sunrise);
+        document.getElementById('sunset').textContent = formatDate(weather.current.sunset);
+        document.getElementById('moon-rise').textContent = formatDate(weather.daily[0].moonrise);
+        document.getElementById('moon-set').textContent = formatDate(weather.daily[0].moonset);
+        document.getElementById('moon-phase').textContent = moonPhaseText(weather.daily[0].moon_phase);
+
+        const moonPhaseValue = weather.daily[0] ?.moon_phase;
+        if (typeof moonPhaseValue === 'number') {
+          const illumination = (moonPhaseValue <= 0.5 ? moonPhaseValue * 2 : (1 - moonPhaseValue) * 2);
+          document.getElementById('moon-illum').textContent = `Illumination: ${(illumination * 100).toFixed(0)}%`;
+        } else {
+          document.getElementById('moon-illum').textContent = `Illumination: --%`;
+        }
+
+        // Hide loading and show app
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('weather-app').classList.remove('hidden');
+        document.getElementById('error').classList.add('hidden');
+      } catch (e) {
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('error').classList.remove('hidden');
+        document.getElementById('weather-app').classList.add('hidden');
+        console.error("Error fetching weather data:", e);
+      }
+    }
+
+    // Initialization
+    window.onload = fetchWeather;
+
+    // Service Worker Registration
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js")
+        .then(() => console.log("Service Worker Registered"))
+        .catch(err => console.error("Service Worker failed to register:", err));
+    }
+  </script>
+</body>
+</html>
