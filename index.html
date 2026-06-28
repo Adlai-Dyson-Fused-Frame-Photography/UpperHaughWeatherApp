@@ -159,15 +159,15 @@
       
       <!-- Current Overview -->
       <section class="text-center py-6">
-        <p id="current-date" class="text-sm font-medium text-white/70 uppercase tracking-widest mb-4"></p>
+        <p id="current-date" class="text-base font-medium text-white/70 uppercase tracking-widest mb-4"></p>
         <div class="flex justify-center items-center gap-6 mb-2">
           <div id="current-icon-container" class="text-white drop-shadow-lg">
-             <i data-lucide="cloud" class="w-16 h-16 sm:w-20 sm:h-20"></i>
+             <i data-lucide="cloud" class="w-20 h-20 sm:w-24 sm:h-24"></i>
           </div>
-          <h1 id="current-temp" class="text-7xl sm:text-8xl font-light text-white tracking-tighter drop-shadow-md">--°</h1>
+          <h1 id="current-temp" class="text-8xl sm:text-9xl font-light text-white tracking-tighter drop-shadow-md">--°</h1>
         </div>
-        <p id="weather-desc" class="text-2xl font-medium text-white capitalize mt-2 accent-text"></p>
-        <p id="feels-like" class="text-md text-white/70 mt-1">Feels like --°</p>
+        <p id="weather-desc" class="text-3xl font-medium text-white capitalize mt-2 accent-text"></p>
+        <p id="feels-like" class="text-lg text-white/70 mt-1">Feels like --°</p>
       </section>
 
       <!-- Main Layout Grid -->
@@ -180,9 +180,9 @@
           <section class="glass-panel p-5">
             <div class="flex items-center gap-2 mb-4 border-b border-white/10 pb-3">
               <i data-lucide="clock" class="text-white/60"></i>
-              <h2 class="text-lg font-semibold accent-text">24-Hour Forecast</h2>
+              <h2 class="text-xl font-semibold accent-text">24-Hour Forecast</h2>
             </div>
-            <div id="hourly-forecast" class="flex scroll-x-hidden space-x-2 py-2 snap-x">
+            <div id="hourly-forecast" class="flex scroll-x-hidden space-x-3 py-2 snap-x">
               <!-- JS Injected -->
             </div>
           </section>
@@ -191,9 +191,9 @@
           <section class="glass-panel p-5 flex-1 flex flex-col">
             <div class="flex items-center gap-2 mb-4 border-b border-white/10 pb-3">
               <i data-lucide="calendar-days" class="text-white/60"></i>
-              <h2 class="text-lg font-semibold accent-text">8-Day Forecast</h2>
+              <h2 class="text-xl font-semibold accent-text">8-Day Forecast</h2>
             </div>
-            <div id="daily-forecast" class="flex flex-col gap-1 flex-1 justify-around">
+            <div id="daily-forecast" class="flex flex-col gap-2 flex-1 justify-around">
               <!-- JS Injected -->
             </div>
           </section>
@@ -203,56 +203,56 @@
         <div class="grid grid-cols-2 gap-4 h-full">
           
           <!-- Precip -->
-          <div class="glass-panel p-4 flex flex-col justify-between min-h-[140px]">
-            <div class="flex items-center gap-2 text-white/70"><i data-lucide="cloud-rain" class="w-5 h-5"></i><span class="text-sm">Rainfall</span></div>
+          <div class="glass-panel p-5 flex flex-col justify-between min-h-[160px]">
+            <div class="flex items-center gap-2 text-white/70"><i data-lucide="cloud-rain" class="w-6 h-6"></i><span class="text-base font-medium">Rainfall</span></div>
             <div>
-              <p id="precip-val" class="text-3xl font-semibold text-white">-- <span class="text-sm font-normal">mm</span></p>
-              <p id="precip-chance" class="text-sm text-white/60">--% chance</p>
+              <p id="precip-val" class="text-4xl font-semibold text-white">-- <span class="text-lg font-normal">mm</span></p>
+              <p id="precip-chance" class="text-base text-white/60">--% chance</p>
             </div>
           </div>
 
           <!-- Wind -->
-          <div class="glass-panel p-4 flex flex-col justify-between min-h-[140px]">
-            <div class="flex items-center gap-2 text-white/70"><i data-lucide="wind" class="w-5 h-5"></i><span class="text-sm">Wind</span></div>
+          <div class="glass-panel p-5 flex flex-col justify-between min-h-[160px]">
+            <div class="flex items-center gap-2 text-white/70"><i data-lucide="wind" class="w-6 h-6"></i><span class="text-base font-medium">Wind</span></div>
             <div>
-              <p id="wind-val" class="text-3xl font-semibold text-white">-- <span class="text-sm font-normal">mph</span></p>
-              <p id="wind-dir" class="text-sm text-white/60">--</p>
+              <p id="wind-val" class="text-4xl font-semibold text-white">-- <span class="text-lg font-normal">mph</span></p>
+              <p id="wind-dir" class="text-base text-white/60">--</p>
             </div>
           </div>
 
           <!-- Humidity -->
-          <div class="glass-panel p-4 flex flex-col justify-between min-h-[140px]">
-            <div class="flex items-center gap-2 text-white/70"><i data-lucide="droplets" class="w-5 h-5"></i><span class="text-sm">Humidity</span></div>
+          <div class="glass-panel p-5 flex flex-col justify-between min-h-[160px]">
+            <div class="flex items-center gap-2 text-white/70"><i data-lucide="droplets" class="w-6 h-6"></i><span class="text-base font-medium">Humidity</span></div>
             <div>
-              <p id="humidity-val" class="text-3xl font-semibold text-white">--%</p>
-              <p id="humidity-status" class="text-sm text-white/60">--</p>
+              <p id="humidity-val" class="text-4xl font-semibold text-white">--%</p>
+              <p id="humidity-status" class="text-base text-white/60">--</p>
             </div>
           </div>
 
           <!-- UV Index -->
-          <div class="glass-panel p-4 flex flex-col justify-between min-h-[140px]">
-            <div class="flex items-center gap-2 text-white/70"><i data-lucide="sun" class="w-5 h-5"></i><span class="text-sm">UV Index</span></div>
+          <div class="glass-panel p-5 flex flex-col justify-between min-h-[160px]">
+            <div class="flex items-center gap-2 text-white/70"><i data-lucide="sun" class="w-6 h-6"></i><span class="text-base font-medium">UV Index</span></div>
             <div>
-              <p id="uv-val" class="text-3xl font-semibold text-white">--</p>
-              <p id="uv-status" class="text-sm text-white/60">--</p>
+              <p id="uv-val" class="text-4xl font-semibold text-white">--</p>
+              <p id="uv-status" class="text-base text-white/60">--</p>
             </div>
           </div>
 
           <!-- Visibility -->
-          <div class="glass-panel p-4 flex flex-col justify-between min-h-[140px]">
-            <div class="flex items-center gap-2 text-white/70"><i data-lucide="eye" class="w-5 h-5"></i><span class="text-sm">Visibility</span></div>
+          <div class="glass-panel p-5 flex flex-col justify-between min-h-[160px]">
+            <div class="flex items-center gap-2 text-white/70"><i data-lucide="eye" class="w-6 h-6"></i><span class="text-base font-medium">Visibility</span></div>
             <div>
-              <p id="visibility-val" class="text-3xl font-semibold text-white">-- <span class="text-sm font-normal">mi</span></p>
-              <p id="visibility-status" class="text-sm text-white/60">--</p>
+              <p id="visibility-val" class="text-4xl font-semibold text-white">-- <span class="text-lg font-normal">mi</span></p>
+              <p id="visibility-status" class="text-base text-white/60">--</p>
             </div>
           </div>
 
           <!-- Pressure -->
-          <div class="glass-panel p-4 flex flex-col justify-between min-h-[140px]">
-            <div class="flex items-center gap-2 text-white/70"><i data-lucide="gauge" class="w-5 h-5"></i><span class="text-sm">Pressure</span></div>
+          <div class="glass-panel p-5 flex flex-col justify-between min-h-[160px]">
+            <div class="flex items-center gap-2 text-white/70"><i data-lucide="gauge" class="w-6 h-6"></i><span class="text-base font-medium">Pressure</span></div>
             <div>
-              <p id="pressure-val" class="text-3xl font-semibold text-white">-- <span class="text-sm font-normal">hPa</span></p>
-              <p id="pressure-status" class="text-sm text-white/60">--</p>
+              <p id="pressure-val" class="text-4xl font-semibold text-white">-- <span class="text-lg font-normal">hPa</span></p>
+              <p id="pressure-status" class="text-base text-white/60">--</p>
             </div>
           </div>
         </div>
@@ -261,20 +261,20 @@
       <!-- Sun & Moon (Now spans the full width at the bottom, outside the split columns) -->
       <div class="glass-panel p-6 w-full flex flex-col gap-4 mt-2">
          <div class="flex items-center gap-2 border-b border-white/10 pb-3 text-white/70">
-            <i data-lucide="eclipse" class="w-5 h-5"></i><span class="text-sm">Sun & Moon</span>
+            <i data-lucide="eclipse" class="w-6 h-6"></i><span class="text-base font-medium">Sun & Moon</span>
          </div>
          <div class="flex justify-between items-center px-4 md:px-12">
             <div class="text-center">
-              <p class="text-xs text-white/50 mb-1">Sunrise</p>
-              <p id="sunrise-val" class="text-lg md:text-xl font-medium text-white">--:--</p>
+              <p class="text-sm text-white/60 mb-1">Sunrise</p>
+              <p id="sunrise-val" class="text-xl md:text-2xl font-medium text-white">--:--</p>
             </div>
             <div class="text-center">
-              <p class="text-xs text-white/50 mb-1">Moon Phase</p>
-              <p id="moon-val" class="text-lg md:text-xl font-medium text-white">--</p>
+              <p class="text-sm text-white/60 mb-1">Moon Phase</p>
+              <p id="moon-val" class="text-xl md:text-2xl font-medium text-white">--</p>
             </div>
             <div class="text-center">
-              <p class="text-xs text-white/50 mb-1">Sunset</p>
-              <p id="sunset-val" class="text-lg md:text-xl font-medium text-white">--:--</p>
+              <p class="text-sm text-white/60 mb-1">Sunset</p>
+              <p id="sunset-val" class="text-xl md:text-2xl font-medium text-white">--:--</p>
             </div>
          </div>
       </div>
@@ -551,22 +551,22 @@
           if (item.type === 'sun') {
             const time = new Date(item.dt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             return `
-              <div class="flex flex-col items-center justify-center min-w-[75px] snap-center bg-orange-500/10 rounded-xl p-2 border border-orange-500/20">
-                <span class="text-[11px] text-orange-200/80 font-medium mb-1">${time}</span>
-                <i data-lucide="${item.lucideIcon}" class="w-6 h-6 text-orange-400 my-1 drop-shadow-md"></i>
-                <span class="text-xs font-semibold text-orange-200">${item.event}</span>
+              <div class="flex flex-col items-center justify-center min-w-[85px] snap-center bg-orange-500/10 rounded-xl p-3 border border-orange-500/20">
+                <span class="text-sm text-orange-200/80 font-medium mb-1">${time}</span>
+                <i data-lucide="${item.lucideIcon}" class="w-8 h-8 text-orange-400 my-1 drop-shadow-md"></i>
+                <span class="text-sm font-semibold text-orange-200 mt-1">${item.event}</span>
               </div>
             `;
           } else {
             const isNow = locData.hourly[0] && locData.hourly[0].dt === item.dt; 
             const timeStr = isNow ? 'Now' : new Date(item.dt * 1000).getHours() + ':00';
             const icon = mapIconCodeToLucide(item.id, item.icon);
-            const pop = item.pop > 0 ? `<div class="text-[11px] text-blue-300 font-bold mt-1">${Math.round(item.pop*100)}%</div>` : '';
+            const pop = item.pop > 0 ? `<div class="text-xs text-blue-300 font-bold mt-1">${Math.round(item.pop*100)}%</div>` : '';
             return `
-              <div class="flex flex-col items-center justify-center min-w-[70px] snap-center bg-white/5 rounded-xl p-2 border border-white/5">
-                <span class="text-xs text-white/70 font-medium mb-1">${timeStr}</span>
-                <i data-lucide="${icon}" class="w-6 h-6 text-white my-1 drop-shadow-md"></i>
-                <span class="text-sm font-semibold">${convertTemp(item.temp)}°</span>
+              <div class="flex flex-col items-center justify-center min-w-[80px] snap-center bg-white/5 rounded-xl p-3 border border-white/5">
+                <span class="text-sm text-white/80 font-medium mb-1">${timeStr}</span>
+                <i data-lucide="${icon}" class="w-8 h-8 text-white my-1 drop-shadow-md"></i>
+                <span class="text-lg font-semibold mt-1">${convertTemp(item.temp)}°</span>
                 ${pop}
               </div>
             `;
@@ -580,16 +580,16 @@
           const icon = mapIconCodeToLucide(d.weather[0].id, d.weather[0].icon);
           const rain = d.rain ? `${Math.round(d.rain)}mm` : '--';
           return `
-            <div class="flex justify-between items-center py-2.5 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 rounded-lg transition-colors">
+            <div class="flex justify-between items-center py-3 border-b border-white/5 last:border-0 hover:bg-white/5 px-3 rounded-lg transition-colors">
               <div class="w-1/3 flex items-center gap-3">
-                <i data-lucide="${icon}" class="w-6 h-6 text-white/90"></i>
-                <span class="font-medium text-base text-white">${dayName}</span>
+                <i data-lucide="${icon}" class="w-8 h-8 text-white/90"></i>
+                <span class="font-medium text-lg text-white">${dayName}</span>
               </div>
-              <div class="w-1/3 text-center text-sm text-blue-300 font-medium"><i data-lucide="droplets" class="w-4 h-4 inline pb-0.5"></i> ${Math.round(d.pop*100)}% <span class="text-white/60 text-xs sm:text-sm">(${rain})</span></div>
-              <div class="w-1/3 text-right text-base">
-                <span class="text-white/70">${convertTemp(d.temp.min)}°</span>
-                <span class="mx-1 text-white/30">|</span>
-                <span class="font-bold text-white text-lg">${convertTemp(d.temp.max)}°</span>
+              <div class="w-1/3 text-center text-base text-blue-300 font-medium"><i data-lucide="droplets" class="w-5 h-5 inline pb-0.5"></i> ${Math.round(d.pop*100)}% <span class="text-white/70 text-sm sm:text-base ml-1">(${rain})</span></div>
+              <div class="w-1/3 text-right text-lg">
+                <span class="text-white/70 text-xl">${convertTemp(d.temp.min)}°</span>
+                <span class="mx-2 text-white/30 text-xl">|</span>
+                <span class="font-bold text-white text-2xl">${convertTemp(d.temp.max)}°</span>
               </div>
             </div>
           `;
